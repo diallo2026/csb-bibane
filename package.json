@@ -1,0 +1,12 @@
+{
+  "name": "csb-serveur-centralise",
+  "version": "2.0.0",
+  "description": "Serveur centralisé — Centre de Santé de Bibane",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
