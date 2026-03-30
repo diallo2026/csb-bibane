@@ -1,0 +1,1787 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Centre de Santé de Bibane — v2</title>
+<style>
+:root{
+  --B:#0369a1;--BL:#e0f2fe;--BD:#01579b;--BDR:#bae6fd;--BG:#f0f9ff;
+  --G:#059669;--GL:#d1fae5;--GD:#065f46;
+  --R:#dc2626;--RL:#fee2e2;--RD:#991b1b;
+  --A:#d97706;--AL:#fef3c7;--AD:#92400e;
+  --P:#7c3aed;--PL:#ede9fe;--PD:#4c1d95;
+  --T:#0891b2;--TL:#cffafe;--TD:#0e7490;
+  --TXT:#0f172a;--MUTED:#64748b;--BDC:#cbd5e1;--W:#fff;--SB:#01579b;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,Helvetica,sans-serif;background:var(--BG);color:var(--TXT);font-size:13px}
+#login-page{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#01579b 0%,#0369a1 60%,#0ea5e9 100%)}
+.lcard{background:var(--W);border-radius:16px;padding:32px;width:440px;box-shadow:0 8px 32px rgba(0,0,0,.18)}
+.licon{width:72px;height:72px;border-radius:50%;background:var(--B);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:14px;font-weight:800;color:#fff;letter-spacing:1px}
+.lcard h1{font-size:14px;font-weight:800;color:var(--TXT);text-align:center;line-height:1.5}
+.lcard p{font-size:11px;color:var(--MUTED);text-align:center;margin-top:3px;margin-bottom:20px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--MUTED);margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em}
+.field select,.field input[type=password]{display:block;width:100%;padding:10px 12px;font-size:13px;border:1.5px solid var(--BDC);border-radius:8px;background:var(--W);color:var(--TXT);outline:none;-webkit-appearance:none;appearance:none}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%230369a1' stroke-width='1.8' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:34px}
+.field select:focus,.field input:focus{border-color:var(--B);box-shadow:0 0 0 3px rgba(3,105,161,.1)}
+.lbtn{display:block;width:100%;padding:12px;background:var(--B);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}
+.lbtn:hover{background:var(--BD)}
+.lerr{background:var(--RL);border:1px solid #fca5a5;border-radius:8px;padding:9px 12px;color:var(--RD);font-size:12px;margin-top:10px;display:none}
+#app-page{display:none;min-height:100vh;flex-direction:row}
+.sidebar{width:225px;min-height:100vh;background:var(--SB);display:flex;flex-direction:column;flex-shrink:0}
+.sb-brand{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.15)}
+.sb-brand-name{font-size:11px;font-weight:800;color:#fff;line-height:1.4}
+.sb-sub{font-size:10px;color:rgba(255,255,255,.5);margin-top:2px}
+.sb-user{padding:9px 16px;border-bottom:1px solid rgba(255,255,255,.12);display:flex;align-items:center;gap:9px}
+.sb-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.sb-name{font-size:11px;font-weight:700;color:#fff}
+.sb-role{font-size:10px;color:rgba(255,255,255,.5)}
+.ng{font-size:9px;font-weight:700;color:rgba(255,255,255,.4);padding:9px 16px 3px;text-transform:uppercase;letter-spacing:.07em}
+.ni{padding:7px 16px;font-size:11px;color:rgba(255,255,255,.7);cursor:pointer;border-left:3px solid transparent;transition:all .1s}
+.ni:hover{background:rgba(255,255,255,.08);color:#fff}
+.ni.on{background:rgba(255,255,255,.14);color:#fff;border-left-color:#38bdf8;font-weight:700}
+.sb-out{margin-top:auto;padding:12px 16px;border-top:1px solid rgba(255,255,255,.12)}
+.sb-out button{width:100%;padding:7px;background:transparent;border:1px solid rgba(255,255,255,.25);border-radius:7px;font-size:11px;cursor:pointer;color:rgba(255,255,255,.7)}
+.sb-out button:hover{background:rgba(255,255,255,.1);color:#fff}
+.main{flex:1;background:var(--BG);overflow:auto}
+.page{display:none;padding:20px}
+.page.on{display:block}
+.ptitle{font-size:16px;font-weight:800;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;color:var(--BD)}
+.card{background:var(--W);border:1px solid var(--BDC);border-radius:10px;padding:16px;margin-bottom:14px}
+.ctitle{font-size:10px;font-weight:700;color:var(--MUTED);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:14px}
+.metric{background:var(--W);border:1px solid var(--BDC);border-radius:7px;padding:12px}
+.ml{font-size:10px;color:var(--MUTED);font-weight:600;margin-bottom:4px}
+.mv{font-size:18px;font-weight:800}
+.mvb{color:var(--B)}.mvg{color:var(--G)}.mvr{color:var(--R)}.mva{color:var(--A)}.mvp{color:var(--P)}.mvt{color:var(--T)}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{text-align:left;font-size:10px;font-weight:700;color:var(--MUTED);padding:6px 7px;border-bottom:1.5px solid var(--BDC);background:var(--BL);white-space:nowrap}
+td{padding:7px;border-bottom:1px solid var(--BL);color:var(--TXT);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--BL)}
+.tr{text-align:right}
+.totrow td{font-weight:800;background:var(--BL)}
+.fg{margin-bottom:10px}
+.fg label{display:block;font-size:10px;font-weight:700;color:var(--MUTED);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.fg input,.fg select,.fg textarea{display:block;width:100%;padding:7px 9px;font-size:12px;border:1px solid var(--BDC);border-radius:7px;background:var(--W);color:var(--TXT);outline:none}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--B);box-shadow:0 0 0 2px rgba(3,105,161,.08)}
+.fg input[readonly]{background:var(--BL);color:var(--MUTED)}
+.fg textarea{resize:vertical;min-height:60px}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.g5{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.br{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+.btn{padding:7px 14px;border:1px solid var(--BDC);border-radius:7px;background:var(--W);color:var(--TXT);font-size:12px;cursor:pointer;font-weight:600}
+.btn:hover{background:var(--BL)}
+.btnp{background:var(--B);color:#fff;border-color:var(--B)}.btnp:hover{background:var(--BD)}
+.btng{background:var(--GL);color:var(--GD);border-color:var(--G)}
+.btnr{background:var(--RL);color:var(--RD);border-color:var(--R)}
+.btna{background:var(--AL);color:var(--AD);border-color:var(--A)}
+.btnpu{background:var(--PL);color:var(--PD);border-color:var(--P)}
+.badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:5px;font-weight:700}
+.bb{background:var(--BL);color:var(--BD)}.bg2{background:var(--GL);color:var(--GD)}
+.br2{background:var(--RL);color:var(--RD)}.ba{background:var(--AL);color:var(--AD)}
+.bp{background:var(--PL);color:var(--PD)}.bt{background:var(--TL);color:var(--TD)}
+.bn{background:#f1f5f9;color:#475569}
+.mois-bar{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:14px}
+.mois-btn{padding:3px 8px;font-size:10px;border:1px solid var(--BDC);border-radius:5px;cursor:pointer;color:var(--MUTED);background:var(--W);font-weight:600}
+.mois-btn:hover,.mois-btn.on{background:var(--B);color:#fff;border-color:var(--B)}
+.yr-bar{display:flex;align-items:center;gap:7px}
+.yr-bar button{padding:2px 9px;font-size:12px}
+.warn-bar{background:var(--AL);border:1px solid var(--A);border-radius:7px;padding:9px 12px;font-size:11px;color:var(--AD);margin-bottom:12px;font-weight:600}
+.info-bar{background:var(--BL);border:1px solid var(--B);border-radius:7px;padding:9px 12px;font-size:11px;color:var(--BD);margin-bottom:12px;font-weight:600}
+.ok-bar{background:var(--GL);border:1px solid var(--G);border-radius:7px;padding:9px 12px;font-size:11px;color:var(--GD);margin-bottom:12px;font-weight:600}
+.muted{color:var(--MUTED)}
+code{background:var(--BL);padding:1px 6px;border-radius:4px;font-family:monospace;font-size:11px;color:var(--BD)}
+.row-s{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--BL);font-size:12px}
+.row-s:last-child{border-bottom:none}
+.section-tab{display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap}
+.stab{padding:5px 12px;font-size:11px;border:1px solid var(--BDC);border-radius:6px;cursor:pointer;background:var(--W);color:var(--MUTED);font-weight:600}
+.stab:hover,.stab.on{background:var(--B);color:#fff;border-color:var(--B)}
+</style>
+</head>
+<body>
+
+<!-- ═══ LOGIN ═══════════════════════════════════════════════ -->
+<div id="login-page">
+<div class="lcard">
+  <div style="text-align:center;margin-bottom:18px">
+    <div class="licon">CSB</div>
+    <h1>Centre de Santé de Bibane</h1>
+    <p>Système de gestion intégré v2 — Guinée</p>
+  </div>
+  <div class="field">
+    <label>Identifiant</label>
+    <select id="lid">
+      <option value="">-- Choisir votre identifiant --</option>
+      <option value="directeur">Directeur</option>
+      <option value="accueil">Accueil / Réception</option>
+      <option value="medecin">Médecin</option>
+      <option value="infirmier">Infirmier(e)</option>
+      <option value="labo">Laborantin</option>
+      <option value="pharmacien">Pharmacien(ne)</option>
+      <option value="comptabilite">Comptabilité</option>
+      <option value="concepteur">Administrateur système</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>Mot de passe</label>
+    <input type="password" id="lpwd" placeholder="Entrez votre mot de passe" onkeydown="if(event.key==='Enter')connexion()">
+  </div>
+  <div class="lerr" id="lerr"></div>
+  <button class="lbtn" id="lbtn" onclick="connexion()">Se connecter</button>
+  <div style="margin-top:14px;text-align:center;font-size:10px;color:#94a3b8">Contactez l'administrateur pour vos accès.</div>
+</div>
+</div>
+
+
+<!-- ═══ PAGE BLOCAGE LICENCE ═══════════════════════════════ -->
+<div id="blocage-page" style="display:none;min-height:100vh;align-items:center;justify-content:center;background:linear-gradient(135deg,#991b1b,#dc2626)">
+  <div style="background:#fff;border-radius:16px;padding:36px;max-width:480px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.3)">
+    <div style="width:72px;height:72px;border-radius:50%;background:#fee2e2;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px">🔒</div>
+    <h2 style="color:#991b1b;font-size:18px;margin-bottom:10px">Accès bloqué — Licence expirée</h2>
+    <p style="color:#64748b;font-size:13px;margin-bottom:16px">La licence du système a expiré pour l'année <strong id="blocage-annee">—</strong>.</p>
+    <p style="color:#dc2626;font-size:12px;padding:10px;background:#fee2e2;border-radius:8px;margin-bottom:20px" id="blocage-raison">—</p>
+    <p style="color:#64748b;font-size:12px">Contactez l'Administrateur système pour renouveler la licence.</p>
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid #eee">
+      <label style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase">Code administrateur</label>
+      <input type="password" id="lic-admin-code" placeholder="Code administrateur" style="width:100%;padding:9px 12px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:13px;outline:none;margin-bottom:10px">
+      <button onclick="debloquerLicence()" style="width:100%;padding:11px;background:#dc2626;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Activer / Renouveler la licence</button>
+    </div>
+  </div>
+</div>
+<!-- ═══ APPLICATION ═══════════════════════════════════════════ -->
+<div id="app-page" style="display:none;min-height:100vh;flex-direction:row">
+<div class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-brand-name">Centre de Santé de Bibane</div>
+    <div class="sb-sub">Système intégré v2</div>
+  </div>
+  <div class="sb-user">
+    <div class="sb-av" id="sb-av">?</div>
+    <div><div class="sb-name" id="sb-nom">—</div><div class="sb-role" id="sb-role">—</div></div>
+  </div>
+  <div id="nav"></div>
+  <div class="sb-out"><button onclick="deconnexion()">Déconnexion</button></div>
+</div>
+<div class="main" id="main"></div>
+</div>
+
+<script>
+// ═══ CONFIGURATION ════════════════════════════════════════════
+const MOIS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const fmt=n=>Math.round(n||0).toLocaleString('fr-GN')+' GNF';
+const fmtn=n=>Math.round(n||0).toLocaleString('fr-GN');
+const auj=()=>new Date().toISOString().split('T')[0];
+let curAnnee=new Date().getFullYear();
+let curMois=new Date().getMonth();
+let SESSION=null;
+let auditLog=[];
+
+// Vaccins PEV enfants
+const VACCINS_ENF=['BCG','VPO0','VPO1','VPO2','VPO3','VPI1','VPI2','PENTA1','PENTA2','PENTA3','PCV1','PCV2','PCV3','ROTA1','ROTA2','VAP1','VAP2','VAP3','VAA','VARR1','VARR2','MenA','VAP4','MILDA'];
+// Vaccins femmes
+const VACCINS_FEM=['TD1','TD2','TD3','TD4','TD5','HPV1','HPV2'];
+// Catalogue examens biologiques avec bornes normales
+const EXAMENS_LABO = [
+  // Hématologie
+  {cat:'Hématologie', code:'NFS', nom:'NFS — Numération Formule Sanguine', bornes:'GR: 4.5-5.5 M/µL (H), 4.0-5.0 (F) | GB: 4000-10000/µL | Plaquettes: 150000-400000/µL | Hb: 13-18 g/dL (H), 12-16 (F) | Hte: 40-54% (H), 36-47% (F)'},
+  {cat:'Hématologie', code:'GS', nom:'Groupe sanguin / Rhésus', bornes:'Résultat qualitatif: A/B/AB/O + Rh+/-'},
+  {cat:'Hématologie', code:'VS', nom:'Vitesse de Sédimentation (VS)', bornes:'< 10 mm/h (H) | < 20 mm/h (F)'},
+  {cat:'Hématologie', code:'TP', nom:'Taux de Prothrombine (TP)', bornes:'70-100%'},
+  {cat:'Hématologie', code:'TCA', nom:'Temps de Céphaline Activée (TCA)', bornes:'25-35 secondes'},
+  // Biochimie
+  {cat:'Biochimie', code:'GLY', nom:'Glycémie à jeun', bornes:'0.7-1.1 g/L (3.9-6.1 mmol/L) | Diabète: > 1.26 g/L'},
+  {cat:'Biochimie', code:'GLYHB', nom:'HbA1c — Hémoglobine glyquée', bornes:'< 5.7% normal | 5.7-6.4% prédiabète | ≥ 6.5% diabète'},
+  {cat:'Biochimie', code:'UREE', nom:'Urée sanguine', bornes:'0.15-0.45 g/L (2.5-7.5 mmol/L)'},
+  {cat:'Biochimie', code:'CREAT', nom:'Créatininémie', bornes:'7-13 mg/L (H) | 6-11 mg/L (F) | 62-115 µmol/L (H) | 53-97 µmol/L (F)'},
+  {cat:'Biochimie', code:'UA', nom:'Uricémie (Acide urique)', bornes:'35-70 mg/L (H) | 25-60 mg/L (F)'},
+  {cat:'Biochimie', code:'CHOL', nom:'Cholestérol total', bornes:'< 2.0 g/L (< 5.2 mmol/L) souhaitable'},
+  {cat:'Biochimie', code:'TG', nom:'Triglycérides', bornes:'< 1.5 g/L (< 1.7 mmol/L)'},
+  {cat:'Biochimie', code:'HDL', nom:'HDL-Cholestérol', bornes:'> 0.4 g/L (H) | > 0.5 g/L (F)'},
+  {cat:'Biochimie', code:'LDL', nom:'LDL-Cholestérol', bornes:'< 1.3 g/L idéal | < 1.6 g/L acceptable'},
+  {cat:'Biochimie', code:'BILI', nom:'Bilirubine totale', bornes:'< 10 mg/L (< 17 µmol/L)'},
+  {cat:'Biochimie', code:'BILID', nom:'Bilirubine directe', bornes:'< 4 mg/L (< 7 µmol/L)'},
+  {cat:'Biochimie', code:'ALAT', nom:'ALAT (TGP) — Transaminases', bornes:'< 40 UI/L (H) | < 35 UI/L (F)'},
+  {cat:'Biochimie', code:'ASAT', nom:'ASAT (TGO) — Transaminases', bornes:'< 40 UI/L'},
+  {cat:'Biochimie', code:'GGT', nom:'Gamma-GT', bornes:'< 55 UI/L (H) | < 38 UI/L (F)'},
+  {cat:'Biochimie', code:'PAL', nom:'Phosphatases alcalines (PAL)', bornes:'40-130 UI/L'},
+  {cat:'Biochimie', code:'PROT', nom:'Protéines totales', bornes:'64-83 g/L'},
+  {cat:'Biochimie', code:'ALBUL', nom:'Albumine', bornes:'35-50 g/L'},
+  {cat:'Biochimie', code:'CA', nom:'Calcium sérique', bornes:'85-105 mg/L (2.1-2.6 mmol/L)'},
+  {cat:'Biochimie', code:'NA', nom:'Natrémie', bornes:'135-145 mmol/L'},
+  {cat:'Biochimie', code:'K', nom:'Kaliémie', bornes:'3.5-5.0 mmol/L'},
+  {cat:'Biochimie', code:'CL', nom:'Chlorémie', bornes:'96-106 mmol/L'},
+  {cat:'Biochimie', code:'FER', nom:'Fer sérique', bornes:'7-27 µmol/L (H) | 6-26 µmol/L (F)'},
+  {cat:'Biochimie', code:'FERR', nom:'Ferritine', bornes:'20-300 µg/L (H) | 10-150 µg/L (F)'},
+  {cat:'Biochimie', code:'AMYL', nom:'Amylasémie', bornes:'30-110 UI/L'},
+  {cat:'Biochimie', code:'LIPA', nom:'Lipasémie', bornes:'< 60 UI/L'},
+  {cat:'Biochimie', code:'CRP', nom:'CRP — Protéine C-Réactive', bornes:'< 6 mg/L | Inflammation: > 10 mg/L'},
+  // Sérologie / Immunologie
+  {cat:'Sérologie', code:'VIH', nom:'Test VIH (ELISA/TDR)', bornes:'Résultat: Réactif / Non réactif / Indéterminé'},
+  {cat:'Sérologie', code:'HEPA', nom:'Hépatite A (IgM HAV)', bornes:'Résultat qualitatif: Positif / Négatif'},
+  {cat:'Sérologie', code:'HEPB', nom:'Hépatite B (AgHBs)', bornes:'Résultat: Positif / Négatif'},
+  {cat:'Sérologie', code:'HEPBC', nom:'Hépatite B (Ac anti-HBc)', bornes:'Résultat: Positif / Négatif'},
+  {cat:'Sérologie', code:'HEPC', nom:'Hépatite C (Ac anti-VHC)', bornes:'Résultat: Positif / Négatif'},
+  {cat:'Sérologie', code:'SYPH', nom:'Sérologie Syphilis (TPHA/VDRL)', bornes:'Résultat: Positif / Négatif + Titre'},
+  {cat:'Sérologie', code:'WIDAL', nom:'Widal (Typhoïde)', bornes:'TO: < 1/40 | TH: < 1/40 | Positif si ≥ 1/160'},
+  {cat:'Sérologie', code:'ASLO', nom:'ASLO (Streptocoque)', bornes:'< 200 UI/mL'},
+  {cat:'Sérologie', code:'RF', nom:'Facteur Rhumatoïde', bornes:'< 14 UI/mL'},
+  {cat:'Sérologie', code:'TSH', nom:'TSH — Thyréostimuline', bornes:'0.4-4.0 mUI/L'},
+  {cat:'Sérologie', code:'T4L', nom:'T4 libre', bornes:'10-25 pmol/L'},
+  {cat:'Sérologie', code:'T3L', nom:'T3 libre', bornes:'3.5-6.5 pmol/L'},
+  {cat:'Sérologie', code:'PSA', nom:'PSA — Antigène Prostatique', bornes:'< 4 ng/mL (normal) | 4-10 zone grise | > 10 suspect'},
+  {cat:'Sérologie', code:'BHTG', nom:'Beta-HCG (test de grossesse)', bornes:'< 5 mUI/mL non enceinte | Positif si > 25 mUI/mL'},
+  // Parasitologie / Microbiologie
+  {cat:'Parasitologie', code:'GE', nom:'Goutte épaisse / Frottis paludisme', bornes:'Résultat: Plasmodium +/- | Densité parasitaire'},
+  {cat:'Parasitologie', code:'TDR', nom:'TDR Paludisme (Test Rapide)', bornes:'Résultat: Positif / Négatif'},
+  {cat:'Parasitologie', code:'KOP', nom:'Coproparasitologie (KOP)', bornes:'Absence de parasites normal'},
+  {cat:'Parasitologie', code:'ECBU', nom:'ECBU (Examen Cytobactériologique Urine)', bornes:'Leucocytes: < 10/mm³ | Bactéries: < 10³ UFC/mL | Seuil infection: ≥ 10⁵ UFC/mL'},
+  {cat:'Parasitologie', code:'HEMO', nom:'Hémoculture', bornes:'Stérilité normale — résultat positif = bactériémie'},
+  {cat:'Parasitologie', code:'CRACHM', nom:'Crachat BAAR (BK — Tuberculose)', bornes:'Résultat: BAAR + (0 à 3+) / BAAR - | Cultures 4-8 semaines'},
+  {cat:'Parasitologie', code:'VAGF', nom:'Frottis vaginal', bornes:'Résultat qualitatif: flore normale / levures / trichomonas / autres'},
+  // Urologie
+  {cat:'Urologie', code:'BU', nom:'Bandelette urinaire (BU)', bornes:'Glucose: absent | Protéines: absent | Hémoglobine: absent | Leucocytes: absent | Nitrites: absent'},
+  {cat:'Urologie', code:'PROTU', nom:'Protéinurie des 24h', bornes:'< 150 mg/24h'},
+  // Hormonologie
+  {cat:'Hormonologie', code:'FSH', nom:'FSH — Hormone folliculo-stimulante', bornes:'1.5-12.4 UI/L (folliculaire) | 1.5-7.6 (lutéale) | Ménopause: > 25'},
+  {cat:'Hormonologie', code:'LH', nom:'LH — Hormone lutéinisante', bornes:'1.9-12.5 UI/L (H) | 2.4-12.6 (folliculaire) | 14-96 (pic ovulatoire)'},
+  {cat:'Hormonologie', code:'PROL', nom:'Prolactine', bornes:'< 200 mUI/L (H) | < 500 mUI/L (F)'},
+  {cat:'Hormonologie', code:'PROG', nom:'Progestérone', bornes:'< 1.5 ng/mL (folliculaire) | 5-20 ng/mL (lutéale)'},
+  {cat:'Hormonologie', code:'TESTOS', nom:'Testostérone totale', bornes:'3-8.7 ng/mL (H) | 0.1-0.9 ng/mL (F)'},
+];
+
+
+const COMPTES_BASE={
+  'directeur':     {mdp:'DIR2026',   label:'Directeur',           role:'directeur',     couleur:'#0369a1',bg:'#e0f2fe'},
+  'accueil':       {mdp:'ACC001',    label:'Accueil / Réception',  role:'accueil',       couleur:'#059669',bg:'#d1fae5'},
+  'medecin':       {mdp:'MED001',    label:'Médecin',              role:'medecin',       couleur:'#7c3aed',bg:'#ede9fe'},
+  'infirmier':     {mdp:'INF001',    label:'Infirmier(e)',         role:'infirmier',     couleur:'#0891b2',bg:'#cffafe'},
+  'labo':          {mdp:'LAB001',    label:'Laborantin',           role:'labo',          couleur:'#d97706',bg:'#fef3c7'},
+  'pharmacien':    {mdp:'PHA001',    label:'Pharmacien(ne)',       role:'pharmacien',    couleur:'#dc2626',bg:'#fee2e2'},
+  'comptabilite':  {mdp:'CPT001',    label:'Comptabilité',         role:'comptabilite',  couleur:'#475569',bg:'#f1f5f9'},
+  'concepteur':    {mdp:'DEV9999',   label:'Administrateur',       role:'concepteur',    couleur:'#1e293b',bg:'#f8fafc'}
+};
+let COMPTES={...COMPTES_BASE};
+
+// ═══ BASE DE DONNÉES ══════════════════════════════════════════
+// API SERVEUR CENTRAL
+let TOKEN=null;
+let DB_CACHE=null;
+
+async function api(method,path,body){
+  const opts={method,headers:{'Content-Type':'application/json'}};
+  if(TOKEN) opts.headers['X-Token']=TOKEN;
+  if(body!==undefined) opts.body=JSON.stringify(body);
+  try{
+    const r=await fetch('/api'+path,opts);
+    const data=await r.json();
+    if(data.licenceExpired){showBlocagePage();return{ok:false};}
+    return data;
+  }catch(e){return{ok:false,message:'Serveur inaccessible'};}
+}
+
+async function getDB(){
+  if(DB_CACHE) return DB_CACHE;
+  const res=await api('GET','/db');
+  if(res.ok){DB_CACHE=res.data;return DB_CACHE;}
+  return {patients:[],consultations:[],examens:[],rdv:[],pharmacie:{medicaments:[],milda:[],vaccins_stock:[]},commandes_phar:[],facturation:{consultations:[],examens:[],pharmacie:[]},depenses:[],subventions:[],personnel:[],salaires:[],vaccination:[],planif_fam:[],cpn:[],parametres:{repartition:{pctDir:0.50,pctSal:0.25,pctCharge:0.15,pctDon:0.10}}};
+}
+
+async function sf(field,data,sub){
+  const db=await getDB();
+  if(sub){if(!db[field])db[field]={};db[field][sub]=data;}
+  else db[field]=data;
+  DB_CACHE=db;
+  if(sub){await api('POST','/db/'+field+'/'+sub,{data});}
+  else{await api('POST','/db/'+field,{data});}
+}
+
+function viderCache(){DB_CACHE=null;}
+
+async function logAudit(action,detail){
+  if(TOKEN) await api('POST','/audit',{action,detail});
+}
+
+// ═══ AUTH ═════════════════════════════════════════════════════
+function chargerCodes(){} // handled by server
+
+
+// ==========================================
+// SYSTÈME DE LICENCE ANNUELLE
+// ==========================================
+function getLicenceData(){
+  try{const d=localStorage.getItem('csb2_licence');if(d)return JSON.parse(d);}catch(e){}
+  return{active:true,anneeValidite:new Date().getFullYear(),activePar:'',activeLe:auj(),raisonBlocage:''};
+}
+function saveLicenceData(data){try{localStorage.setItem('csb2_licence',JSON.stringify(data));}catch(e){}}
+
+function checkLicence(){
+  const now=new Date();
+  const lic=getLicenceData();
+  const anneeEnCours=now.getFullYear();
+  // Blocage auto si on dépasse le 31/12 de l'année de validité
+  if(lic.anneeValidite < anneeEnCours){
+    saveLicenceData({...lic,active:false,raisonBlocage:'Expiration automatique au 31/12/'+lic.anneeValidite});
+    return false;
+  }
+  // Vérifier si on est après le 31/12 de l'année en cours
+  const fin=new Date(lic.anneeValidite,11,31,23,59,59);
+  if(now>fin && lic.anneeValidite<=anneeEnCours){
+    saveLicenceData({...lic,active:false,raisonBlocage:'Expiration automatique au 31/12/'+lic.anneeValidite});
+    return false;
+  }
+  return lic.active===true;
+}
+
+function showBlocagePage(){
+  const lic=getLicenceData();
+  document.getElementById('login-page').style.display='none';
+  document.getElementById('app-page').style.display='none';
+  document.getElementById('blocage-page').style.display='flex';
+  document.getElementById('blocage-raison').textContent=lic.raisonBlocage||'Licence desactivee par administrateur.';
+  document.getElementById('blocage-annee').textContent=lic.anneeValidite||new Date().getFullYear();
+}
+
+async function debloquerLicence(){
+  const code=document.getElementById('lic-admin-code')?.value?.trim();
+  if(!code){alert('Entrez le code administrateur');return;}
+  const annee=new Date().getFullYear();
+  const res=await api('POST','/licence',{adminCode:code,action:'activer',anneeValidite:annee});
+  if(res.ok){
+    document.getElementById('blocage-page').style.display='none';
+    document.getElementById('login-page').style.display='flex';
+    document.getElementById('lic-admin-code').value='';
+    alert('Licence activee pour '+annee+'.');
+  }else{alert('Code administrateur incorrect.');}
+}
+
+// Vérifier la licence au chargement de la page
+window.addEventListener('DOMContentLoaded',()=>{
+  chargerCodes();
+  if(!checkLicence()){
+    showBlocagePage();
+  }
+});
+
+async function connexion(){
+  const id=document.getElementById('lid').value;
+  const mdp=document.getElementById('lpwd').value.trim();
+  const err=document.getElementById('lerr');
+  err.style.display='none';
+  if(!id){err.textContent='Veuillez choisir votre identifiant.';err.style.display='block';return;}
+  if(!mdp){err.textContent='Veuillez entrer votre mot de passe.';err.style.display='block';return;}
+  const btn=document.getElementById('lbtn');
+  if(btn){btn.disabled=true;btn.textContent='Connexion...';}
+  const res=await api('POST','/login',{identifiant:id,password:mdp});
+  if(btn){btn.disabled=false;btn.textContent='Se connecter';}
+  if(res.licenceExpired){showBlocagePage();return;}
+  if(!res.ok){
+    err.textContent=res.message||'Identifiant ou mot de passe incorrect';
+    err.style.display='block';
+    document.getElementById('lpwd').value='';
+    document.getElementById('lpwd').focus();return;
+  }
+  TOKEN=res.token;SESSION=res.user;
+  viderCache();
+  lancerApp();
+}
+async function deconnexion(){
+  if(TOKEN) await api('POST','/logout');
+  TOKEN=null;SESSION=null;viderCache();
+  document.getElementById('lid').value='';document.getElementById('lpwd').value='';
+  document.getElementById('lerr').style.display='none';
+  document.getElementById('app-page').style.display='none';
+  document.getElementById('login-page').style.display='flex';
+}
+function lancerApp(){
+  document.getElementById('login-page').style.display='none';
+  document.getElementById('app-page').style.display='flex';
+  document.getElementById('sb-nom').textContent=SESSION.label;
+  document.getElementById('sb-role').textContent=SESSION.role;
+  const av=document.getElementById('sb-av');
+  av.textContent=SESSION.label[0].toUpperCase();
+  av.style.background=SESSION.bg||'#e0f2fe';
+  av.style.color=SESSION.couleur||'#0369a1';
+  buildNav();aller('dashboard');
+}
+
+// ═══ NAVIGATION ═══════════════════════════════════════════════
+function isRole(...roles){return roles.includes(SESSION?.role)||SESSION?.role==='concepteur';}
+function buildNav(){
+  const r=SESSION.role;
+  let h='';
+  h+=nG('Général');h+=nI('dashboard','Tableau de bord');
+  if(isRole('directeur')) h+=nI('supervision','Supervision');
+  // Accueil
+  if(isRole('accueil','medecin','infirmier')){
+    h+=nG('Patients');
+    if(isRole('accueil')) h+=nI('patients','Enregistrement patients');
+    h+=nI('chercher_patient','Rechercher un patient');
+    if(isRole('accueil','medecin')) h+=nI('rdv','Rendez-vous');
+  }
+  // Médecin
+  if(isRole('medecin')){
+    h+=nG('Consultations');
+    h+=nI('consultations','Consultations');
+    h+=nI('examens','Demandes examens');
+    h+=nI('vaccination_med','Vaccination / PF / CPoN');
+  }
+  // Infirmier
+  if(isRole('infirmier')){
+    h+=nG('Soins');
+    h+=nI('chercher_patient','Vérifier patient');
+    h+=nI('vaccination_inf','Vaccination / PF / CPoN');
+  }
+  // Labo
+  if(isRole('labo')){
+    h+=nG('Laboratoire');
+    h+=nI('labo_examens','Examens biologiques');
+    h+=nI('labo_resultats','Résultats & rapports');
+  }
+  // Pharmacie
+  if(isRole('pharmacien')){
+    h+=nG('Pharmacie');
+    h+=nI('stock_med','Stock médicaments');
+    h+=nI('stock_milda','Stock MILDA');
+    h+=nI('stock_vaccins','Stock vaccins');
+    h+=nI('dispensation','Dispensation');
+    h+=nI('commande_phar','Commande de stock');
+  }
+  // Comptabilité
+  if(isRole('comptabilite')){
+    h+=nG('Comptabilité');
+    h+=nI('recouvrement','Recouvrement global');
+    h+=nI('fact_consultation','Consultations');
+    h+=nI('fact_examens','Examens biologiques');
+    h+=nI('fact_pharmacie','Pharmacie');
+    h+=nI('subventions','Subventions');
+    h+=nI('depenses','Dépenses');
+  }
+  // Finances (directeur voit tout)
+  if(isRole('directeur')){
+    h+=nG('Finances');
+    h+=nI('finances_dir','Situation financière');
+    h+=nI('subventions','Subventions');
+    h+=nI('depenses_dir','Dépenses');
+  }
+  // Salaires (directeur)
+  if(isRole('directeur')){
+    h+=nG('Ressources humaines');
+    h+=nI('salaires','Salaires & primes');
+    h+=nI('personnel','Gestion du personnel');
+  }
+  // Rapports
+  h+=nG('Rapports');
+  h+=nI('rapport','Rapport mensuel');
+  // Admin
+  if(isRole('directeur','concepteur')){
+    h+=nG('Administration');
+    h+=nI('audit','Journal d\'audit');
+    if(isRole('directeur')) h+=nI('codes','Codes d\'accès');
+    if(isRole('concepteur')) h+=nI('admin','Admin système');
+  }
+  document.getElementById('nav').innerHTML=h;
+}
+const nG=l=>`<div class="ng">${l}</div>`;
+const nI=(id,l)=>`<div class="ni" id="ni-${id}" onclick="aller('${id}')">${l}</div>`;
+function aller(id){
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+  const el=document.getElementById('ni-'+id);if(el)el.classList.add('on');
+  const pages={
+    dashboard,supervision,patients,chercher_patient,rdv,
+    consultations,examens,vaccination_med,vaccination_inf,
+    labo_examens,labo_resultats,
+    stock_med,stock_milda,stock_vaccins,dispensation,commande_phar,
+    recouvrement,fact_consultation,fact_examens,fact_pharmacie,
+    subventions,depenses,finances_dir,depenses_dir,
+    salaires,personnel,rapport,audit,codes,admin
+  };
+  const fn=pages[id];
+  if(fn) fn();
+  else document.getElementById('main').innerHTML=`<div class="page on"><p class="muted" style="padding:2rem">Page en cours de développement.</p></div>`;
+}
+function aff(html){document.getElementById('main').innerHTML=html;}
+function roLect(){return'<div class="warn-bar">Mode lecture seule.</div>';}
+function barA(s){return`<div class="yr-bar"><button class="btn" onclick="curAnnee--;aller('${s}')">−</button><strong>${curAnnee}</strong><button class="btn" onclick="curAnnee++;aller('${s}')">+</button></div>`;}
+function barM(s){return`<div class="mois-bar">${MOIS.map((m,i)=>`<button class="mois-btn${i===curMois?' on':''}" onclick="curMois=${i};document.querySelectorAll('.mois-bar .mois-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on');aller('${s}')">${m.slice(0,3)}</button>`).join('')}</div>`;}
+
+// ═══ DASHBOARD ════════════════════════════════════════════════
+async function dashboard(){
+  const db=await getDB();
+  const r=SESSION.role;
+  const pats=db.patients.length;
+  const consM=db.consultations.filter(c=>c.mois===curMois&&c.annee===curAnnee).length;
+  const exM=db.examens.filter(e=>e.mois===curMois&&e.annee===curAnnee).length;
+  const recC=db.facturation.consultations.filter(f=>f.mois===curMois&&f.annee===curAnnee).reduce((a,f)=>a+(f.montant||0),0);
+  const recE=db.facturation.examens.filter(f=>f.mois===curMois&&f.annee===curAnnee).reduce((a,f)=>a+(f.montant||0),0);
+  const recP=db.facturation.pharmacie.filter(f=>f.mois===curMois&&f.annee===curAnnee).reduce((a,f)=>a+(f.montant||0),0);
+  const depM=db.depenses.filter(d=>d.mois===curMois&&d.annee===curAnnee).reduce((a,d)=>a+(d.montant||0),0);
+  const subM=db.subventions.filter(s=>s.mois===curMois&&s.annee===curAnnee).reduce((a,s)=>a+(s.montant||0),0);
+  const recTot=recC+recE+recP;
+  const medAlerte=db.pharmacie.medicaments.filter(m=>(m.stock||0)<=(m.seuil||5)).length;
+
+  // Bloc selon rôle
+  let bloc='';
+  if(r==='directeur'||r==='comptabilite'||r==='concepteur'){
+    bloc=`<div class="metrics">
+      <div class="metric"><div class="ml">Patients enregistrés</div><div class="mv mvb">${pats}</div></div>
+      <div class="metric"><div class="ml">Consultations ce mois</div><div class="mv mvg">${consM}</div></div>
+      <div class="metric"><div class="ml">Examens biologiques</div><div class="mv mvt">${exM}</div></div>
+      <div class="metric"><div class="ml">Recette totale mois</div><div class="mv mvb">${fmt(recTot)}</div></div>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="ml">Recette consultation</div><div class="mv mvg">${fmt(recC)}</div></div>
+      <div class="metric"><div class="ml">Recette labo</div><div class="mv mvt">${fmt(recE)}</div></div>
+      <div class="metric"><div class="ml">Recette pharmacie</div><div class="mv mva">${fmt(recP)}</div></div>
+      <div class="metric"><div class="ml">Subventions reçues</div><div class="mv mvp">${fmt(subM)}</div></div>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="ml">Dépenses du mois</div><div class="mv mvr">${fmt(depM)}</div></div>
+      <div class="metric"><div class="ml">Bénéfice net</div><div class="mv ${recTot-depM>=0?'mvg':'mvr'}">${fmt(recTot+subM-depM)}</div></div>
+      <div class="metric"><div class="ml">Médicaments en alerte</div><div class="mv ${medAlerte>0?'mvr':'mvg'}">${medAlerte}</div></div>
+      <div class="metric"><div class="ml">Commandes en attente</div><div class="mv mva">${db.commandes_phar.filter(c=>c.statut==='En attente').length}</div></div>
+    </div>`;
+  } else if(r==='medecin'){
+    bloc=`<div class="metrics">
+      <div class="metric"><div class="ml">Mes consultations ce mois</div><div class="mv mvb">${db.consultations.filter(c=>c.mois===curMois&&c.annee===curAnnee&&c.medecin===SESSION.label).length}</div></div>
+      <div class="metric"><div class="ml">Examens demandés</div><div class="mv mvt">${db.examens.filter(e=>e.mois===curMois&&e.annee===curAnnee).length}</div></div>
+      <div class="metric"><div class="ml">RDV aujourd'hui</div><div class="mv mvp">${db.rdv.filter(r=>r.date===auj()).length}</div></div>
+      <div class="metric"><div class="ml">Patients enregistrés</div><div class="mv mvg">${pats}</div></div>
+    </div>`;
+  } else if(r==='labo'){
+    const enAttente=db.examens.filter(e=>e.statut==='Demandé').length;
+    bloc=`<div class="metrics">
+      <div class="metric"><div class="ml">Examens en attente</div><div class="mv mvr">${enAttente}</div></div>
+      <div class="metric"><div class="ml">Résultats ce mois</div><div class="mv mvg">${db.examens.filter(e=>e.mois===curMois&&e.annee===curAnnee&&e.statut==='Résultat disponible').length}</div></div>
+      <div class="metric"><div class="ml">Total examens mois</div><div class="mv mvt">${exM}</div></div>
+      <div class="metric"><div class="ml">Recette labo</div><div class="mv mvb">${fmt(recE)}</div></div>
+    </div>`;
+  } else if(r==='pharmacien'){
+    bloc=`<div class="metrics">
+      <div class="metric"><div class="ml">Médicaments en alerte</div><div class="mv ${medAlerte>0?'mvr':'mvg'}">${medAlerte}</div></div>
+      <div class="metric"><div class="ml">Références stock</div><div class="mv mvb">${db.pharmacie.medicaments.length}</div></div>
+      <div class="metric"><div class="ml">Stock MILDA</div><div class="mv mvt">${db.pharmacie.milda.reduce((a,m)=>a+(m.stock||0),0)}</div></div>
+      <div class="metric"><div class="ml">Commandes en attente</div><div class="mv mva">${db.commandes_phar.filter(c=>c.statut==='En attente').length}</div></div>
+    </div>`;
+  } else {
+    bloc=`<div class="metrics">
+      <div class="metric"><div class="ml">Patients</div><div class="mv mvb">${pats}</div></div>
+      <div class="metric"><div class="ml">Consultations ce mois</div><div class="mv mvg">${consM}</div></div>
+      <div class="metric"><div class="ml">Examens ce mois</div><div class="mv mvt">${exM}</div></div>
+      <div class="metric"><div class="ml">RDV aujourd'hui</div><div class="mv mvp">${db.rdv.filter(r=>r.date===auj()).length}</div></div>
+    </div>`;
+  }
+
+  const alertes=medAlerte>0?`<div class="warn-bar">⚠ ${medAlerte} médicament(s) en stock faible — vérifiez la pharmacie.</div>`:'';
+  const cmdsAlert=db.commandes_phar.filter(c=>c.statut==='Approuvée').length>0?`<div class="ok-bar">✓ ${db.commandes_phar.filter(c=>c.statut==='Approuvée').length} commande(s) pharmacie approuvée(s) en attente de paiement.</div>`:'';
+
+  aff(`<div class="page on"><div class="ptitle"><span>Tableau de bord — ${MOIS[curMois]} ${curAnnee}</span>${barA('dashboard')}</div>
+  ${barM('dashboard')}${alertes}${cmdsAlert}${bloc}</div>`);
+}
+
+// ═══ SUPERVISION ══════════════════════════════════════════════
+async function supervision(){
+  const db=await getDB();
+  const recC=db.facturation.consultations.reduce((a,f)=>a+(f.montant||0),0);
+  const recE=db.facturation.examens.reduce((a,f)=>a+(f.montant||0),0);
+  const recP=db.facturation.pharmacie.reduce((a,f)=>a+(f.montant||0),0);
+  const depTot=db.depenses.reduce((a,d)=>a+(d.montant||0),0);
+  const subTot=db.subventions.reduce((a,s)=>a+(s.montant||0),0);
+  aff(`<div class="page on"><div class="ptitle">Supervision globale</div>
+  <div class="info-bar">Vue Directeur — ensemble des activités et finances du centre.</div>
+  <div class="g3">
+    <div class="card"><div class="ctitle">Finances globales</div>
+      <div class="row-s"><span>Recettes consultations</span><strong>${fmt(recC)}</strong></div>
+      <div class="row-s"><span>Recettes labo</span><strong>${fmt(recE)}</strong></div>
+      <div class="row-s"><span>Recettes pharmacie</span><strong>${fmt(recP)}</strong></div>
+      <div class="row-s"><span>Subventions reçues</span><strong style="color:var(--P)">${fmt(subTot)}</strong></div>
+      <div class="row-s"><span>Total recettes</span><strong style="color:var(--G)">${fmt(recC+recE+recP+subTot)}</strong></div>
+      <div class="row-s"><span>Dépenses totales</span><strong style="color:var(--R)">${fmt(depTot)}</strong></div>
+      <div class="row-s" style="border-top:2px solid var(--BDC);margin-top:6px;padding-top:8px"><strong>Solde net</strong><strong style="font-size:16px;color:${recC+recE+recP+subTot-depTot>=0?'var(--G)':'var(--R)'}">${fmt(recC+recE+recP+subTot-depTot)}</strong></div>
+    </div>
+    <div class="card"><div class="ctitle">Activités médicales</div>
+      <div class="row-s"><span>Patients enregistrés</span><strong>${db.patients.length}</strong></div>
+      <div class="row-s"><span>Total consultations</span><strong>${db.consultations.length}</strong></div>
+      <div class="row-s"><span>Total examens labo</span><strong>${db.examens.length}</strong></div>
+      <div class="row-s"><span>Vaccinations enregistrées</span><strong>${db.vaccination.length}</strong></div>
+      <div class="row-s"><span>Planif. familiale</span><strong>${db.planif_fam.length}</strong></div>
+      <div class="row-s"><span>Consultations postnatales</span><strong>${db.cpn.length}</strong></div>
+    </div>
+    <div class="card"><div class="ctitle">Pharmacie & stocks</div>
+      <div class="row-s"><span>Références médicaments</span><strong>${db.pharmacie.medicaments.length}</strong></div>
+      <div class="row-s"><span>Médicaments en alerte</span><strong style="color:var(--R)">${db.pharmacie.medicaments.filter(m=>(m.stock||0)<=(m.seuil||5)).length}</strong></div>
+      <div class="row-s"><span>Références MILDA</span><strong>${db.pharmacie.milda.length}</strong></div>
+      <div class="row-s"><span>Vaccins en stock</span><strong>${db.pharmacie.vaccins_stock.length}</strong></div>
+      <div class="row-s"><span>Commandes en attente</span><strong style="color:var(--A)">${db.commandes_phar.filter(c=>c.statut==='En attente').length}</strong></div>
+      <div class="row-s"><span>Personnel enregistré</span><strong>${db.personnel.length}</strong></div>
+    </div>
+  </div></div>`);
+}
+
+// ═══ PATIENTS (Accueil) ════════════════════════════════════════
+async function patients(){
+  if(!isRole('accueil')){aff('<div class="page on">'+roLect()+'</div>');return;}
+  const db=await getDB();
+  aff(`<div class="page on"><div class="ptitle">Enregistrement patients <span class="badge bb">${db.patients.length} dossiers</span></div>
+  <div class="card"><div class="ctitle">Nouveau patient — toutes informations saisies ici</div>
+  <div class="g3">
+    <div class="fg"><label>Nom complet</label><input id="p-nom" placeholder="Prénom Nom"></div>
+    <div class="fg"><label>Date de naissance</label><input type="date" id="p-naiss"></div>
+    <div class="fg"><label>Lieu de naissance</label><input id="p-lieu" placeholder="Ville, préfecture"></div>
+  </div>
+  <div class="g3">
+    <div class="fg"><label>Sexe</label><select id="p-sexe"><option>Masculin</option><option>Féminin</option></select></div>
+    <div class="fg"><label>Téléphone</label><input id="p-tel" placeholder="+224 6XX XXX XXX"></div>
+    <div class="fg"><label>Adresse</label><input id="p-adr" placeholder="Quartier, ville"></div>
+  </div>
+  <div class="g3">
+    <div class="fg"><label>Groupe sanguin</label><select id="p-sang"><option>—</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select></div>
+    <div class="fg"><label>Profession</label><input id="p-prof" placeholder="Profession"></div>
+    <div class="fg"><label>Responsable / Contact urgence</label><input id="p-resp" placeholder="Nom et téléphone"></div>
+  </div>
+  <div class="fg"><label>Antécédents médicaux</label><textarea id="p-ant" placeholder="Allergies, maladies chroniques, traitements en cours..."></textarea></div>
+  <div class="br"><button class="btn btnp" onclick="sauverPatient()">Enregistrer le patient</button></div></div>
+  <div class="card"><div class="ctitle">Liste des patients</div>
+  <input id="p-search" placeholder="Rechercher par nom ou code..." style="width:300px;padding:7px 10px;border:1px solid var(--BDC);border-radius:7px;font-size:12px;outline:none;margin-bottom:10px" oninput="filtrerPats()">
+  <div class="tw" id="p-list">${buildPatTable(db.patients)}</div></div></div>`);
+}
+function buildPatTable(liste){
+  if(!liste.length)return'<p class="muted" style="padding:14px;text-align:center">Aucun patient</p>';
+  return`<table><thead><tr><th>Code patient</th><th>Nom complet</th><th>Né(e) le</th><th>Lieu naissance</th><th>Sexe</th><th>Téléphone</th><th>Gr. sanguin</th></tr></thead>
+  <tbody>${liste.map(p=>`<tr><td><code style="font-size:12px;font-weight:800">${p.id}</code></td><td><strong>${p.nom}</strong></td><td>${p.naiss||'—'}</td><td>${p.lieu||'—'}</td><td>${p.sexe}</td><td>${p.tel||'—'}</td><td><span class="badge br2">${p.sang||'—'}</span></td></tr>`).join('')}</tbody></table>`;
+}
+async function filtrerPats(){
+  const q= async (document.getElementById('p-search')?.value||'').toLowerCase();
+  const db=await getDB();
+  const liste=q?db.patients.filter(p=>p.nom.toLowerCase().includes(q)||p.id.toLowerCase().includes(q)):db.patients;
+  const el=document.getElementById('p-list');if(el)el.innerHTML=buildPatTable(liste);
+}
+async function sauverPatient(){
+  const nom=document.getElementById('p-nom')?.value?.trim();
+  if(!nom){alert('Nom obligatoire');return;}
+  const db=await getDB();
+  const id='CSB-'+String(db.patients.length+1).padStart(5,'0');
+  db.patients.push({id,nom,naiss:document.getElementById('p-naiss')?.value||'',lieu:document.getElementById('p-lieu')?.value||'',sexe:document.getElementById('p-sexe')?.value||'Masculin',tel:document.getElementById('p-tel')?.value||'',adr:document.getElementById('p-adr')?.value||'',sang:document.getElementById('p-sang')?.value||'—',prof:document.getElementById('p-prof')?.value||'',resp:document.getElementById('p-resp')?.value||'',ant:document.getElementById('p-ant')?.value||'',creeLe:auj(),derniereVisite:'—'});
+  await sf('patients',db.patients);await logAudit('Patient enregistré',nom+' ('+id+')');
+  alert('Patient enregistré — Code : '+id);aller('patients');
+}
+
+// ═══ RECHERCHE PATIENT ════════════════════════════════════════
+async function chercher_patient(){
+  const db=await getDB();
+  const isInf=SESSION.role==='infirmier';
+  aff(`<div class="page on"><div class="ptitle">${isInf?'Vérifier un patient':'Rechercher un patient'}</div>
+  ${isInf?'<div class="info-bar">Infirmier(e) — saisissez uniquement le code patient. Toutes les informations s\'affichent automatiquement.</div>':''}
+  <div class="card" style="max-width:500px">
+    <div class="fg"><label>Code patient</label>
+      <input id="code-rech" placeholder="ex: CSB-00001" oninput="this.value=this.value.toUpperCase()" style="font-size:16px;font-weight:700;letter-spacing:1px">
+    </div>
+    <div class="br"><button class="btn btnp" onclick="rechercherPatient()">Rechercher</button></div>
+  </div>
+  <div id="pat-result"></div></div>`);
+}
+async function rechercherPatient(){
+  const code=document.getElementById('code-rech')?.value?.trim()?.toUpperCase();
+  if(!code){return;}
+  const db=await getDB();
+  const p=db.patients.find(x=>x.id===code);
+  const el=document.getElementById('pat-result');
+  if(!p){el.innerHTML='<div class="warn-bar">Patient introuvable avec ce code. Vérifiez le code.</div>';return;}
+  const cons=db.consultations.filter(c=>c.patId===p.id);
+  const exs=db.examens.filter(e=>e.patId===p.id);
+  const vacs=db.vaccination.filter(v=>v.patId===p.id);
+  el.innerHTML=`<div class="card" style="border:2px solid var(--B)">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+      <div style="width:50px;height:50px;border-radius:50%;background:var(--BL);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--BD)">${p.nom[0]}</div>
+      <div><div style="font-size:16px;font-weight:800">${p.nom}</div><div style="font-size:12px;color:var(--MUTED)">Code : <strong>${p.id}</strong> — Enregistré le ${p.creeLe}</div></div>
+    </div>
+    <div class="g3">
+      <div><div class="ctitle">Infos personnelles</div>
+        <div class="row-s"><span class="muted">Date naissance</span><strong>${p.naiss||'—'}</strong></div>
+        <div class="row-s"><span class="muted">Lieu naissance</span><strong>${p.lieu||'—'}</strong></div>
+        <div class="row-s"><span class="muted">Sexe</span><strong>${p.sexe}</strong></div>
+        <div class="row-s"><span class="muted">Téléphone</span><strong>${p.tel||'—'}</strong></div>
+        <div class="row-s"><span class="muted">Adresse</span><strong>${p.adr||'—'}</strong></div>
+      </div>
+      <div><div class="ctitle">Données médicales</div>
+        <div class="row-s"><span class="muted">Groupe sanguin</span><span class="badge br2">${p.sang||'—'}</span></div>
+        <div class="row-s"><span class="muted">Profession</span><strong>${p.prof||'—'}</strong></div>
+        <div class="row-s"><span class="muted">Contact urgence</span><strong>${p.resp||'—'}</strong></div>
+        <div class="row-s"><span class="muted">Dernière visite</span><strong>${p.derniereVisite||'—'}</strong></div>
+        <div class="row-s"><span class="muted">Antécédents</span><span style="font-size:11px">${p.ant||'—'}</span></div>
+      </div>
+      <div><div class="ctitle">Historique</div>
+        <div class="row-s"><span class="muted">Consultations</span><strong>${cons.length}</strong></div>
+        <div class="row-s"><span class="muted">Examens labo</span><strong>${exs.length}</strong></div>
+        <div class="row-s"><span class="muted">Vaccinations</span><strong>${vacs.length}</strong></div>
+        <div class="row-s"><span class="muted">Résultats dispo.</span><strong>${exs.filter(e=>e.statut==='Résultat disponible').length}</strong></div>
+      </div>
+    </div>
+    ${cons.length?`<div class="ctitle" style="margin-top:14px">Dernières consultations</div><div class="tw"><table><thead><tr><th>Date</th><th>Type</th><th>Médecin</th><th>Diagnostic</th></tr></thead><tbody>${cons.slice(-3).reverse().map(c=>`<tr><td>${c.date}</td><td>${c.type}</td><td>${c.medecin||'—'}</td><td>${c.diagnostic||'—'}</td></tr>`).join('')}</tbody></table></div>`:''}
+  </div>`;
+}
+
+// ═══ RENDEZ-VOUS ══════════════════════════════════════════════
+async function rdv(){
+  const db=await getDB();
+  const ro=SESSION.role==='directeur';
+  const patOpts='<option value="">— Saisir code ou nom —</option>'+db.patients.map(p=>`<option value="${p.id}">${p.id} — ${p.nom}</option>`).join('');
+  const today=db.rdv.filter(r=>r.date===auj());
+  const form=ro?roLect():`<div class="card"><div class="ctitle">Planifier un rendez-vous</div>
+  <div class="g3">
+    <div class="fg"><label>Patient</label><select id="r-pat" onchange="fillRdvPat()">${patOpts}</select></div>
+    <div class="fg"><label>Nom patient</label><input id="r-nom" placeholder="Auto ou saisir"></div>
+    <div class="fg"><label>Date</label><input type="date" id="r-date" value="${auj()}"></div>
+  </div>
+  <div class="g3">
+    <div class="fg"><label>Heure</label><input type="time" id="r-heure"></div>
+    <div class="fg"><label>Motif</label><input id="r-motif" placeholder="Motif de consultation"></div>
+    <div class="fg"><label>Médecin assigné</label><input id="r-med" placeholder="Nom du médecin"></div>
+  </div>
+  <div class="br"><button class="btn btnp" onclick="sauverRdv()">Planifier</button></div></div>`;
+  aff(`<div class="page on"><div class="ptitle">Rendez-vous</div>${form}
+  <div class="card"><div class="ctitle">RDV aujourd'hui (${auj()}) — ${today.length}</div>
+  <div class="tw"><table><thead><tr><th>Heure</th><th>Patient</th><th>Motif</th><th>Médecin</th><th>Statut</th>${!ro?'<th>Action</th>':''}</tr></thead>
+  <tbody>${today.map((r,i)=>`<tr><td><strong>${r.heure||'—'}</strong></td><td>${r.nomPatient}</td><td>${r.motif||'—'}</td><td>${r.medecin||'—'}</td><td><span class="badge ${r.statut==='Confirmé'?'bg2':r.statut==='Annulé'?'br2':'ba'}">${r.statut}</span></td>${!ro?`<td style="display:flex;gap:3px"><button class="btn btng" style="font-size:10px;padding:2px 6px" onclick="statutRdv('${r.id}','Confirmé')">✓</button><button class="btn btnr" style="font-size:10px;padding:2px 6px" onclick="statutRdv('${r.id}','Annulé')">✗</button></td>`:''}</tr>`).join('')||'<tr><td colspan="6" class="muted" style="text-align:center;padding:14px">Aucun RDV aujourd\'hui</td></tr>'}</tbody></table></div></div></div>`);
+}
+async function fillRdvPat(){
+  const db=await getDB();const id=document.getElementById('r-pat')?.value;
+  const p=db.patients.find(x=>x.id===id);
+  const el=document.getElementById('r-nom');if(el)el.value=p?p.nom:'';
+}
+async function sauverRdv(){
+  const db=await getDB();
+  const nom=document.getElementById('r-nom')?.value?.trim();
+  if(!nom){alert('Patient obligatoire');return;}
+  const id='RDV-'+Date.now();
+  db.rdv.push({id,patId:document.getElementById('r-pat')?.value,nomPatient:nom,date:document.getElementById('r-date')?.value||auj(),heure:document.getElementById('r-heure')?.value||'',motif:document.getElementById('r-motif')?.value||'',medecin:document.getElementById('r-med')?.value||'',statut:'En attente'});
+  await sf('rdv',db.rdv);await logAudit('RDV planifié',nom);aller('rdv');
+}
+async function statutRdv(id,statut){
+  const db=await getDB();const r=db.rdv.find(x=>x.id===id);
+  if(r){r.statut=statut;sf('rdv',db.rdv);aller('rdv');}
+}
+
+// ═══ CONSULTATIONS (Médecin) ══════════════════════════════════
+async function consultations(){
+  if(!isRole('medecin')){aff('<div class="page on">'+roLect()+'</div>');return;}
+  const db=await getDB();
+  const cons=db.consultations.filter(c=>c.mois===curMois&&c.annee===curAnnee);
+  const patOpts='<option value="">— Code ou nom —</option>'+db.patients.map(p=>`<option value="${p.id}">${p.id} — ${p.nom}</option>`).join('');
+  aff(`<div class="page on"><div class="ptitle"><span>Consultations — ${MOIS[curMois]} ${curAnnee}</span>${barA('consultations')}</div>${barM('consultations')}
+  <div class="metrics" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+    <div class="metric"><div class="ml">Total ce mois</div><div class="mv mvb">${cons.length}</div></div>
+    <div class="metric"><div class="ml">Urgences</div><div class="mv mvr">${cons.filter(c=>c.type==='Urgence').length}</div></div>
+    <div class="metric"><div class="ml">Suivis</div><div class="mv mvg">${cons.filter(c=>c.type==='Suivi').length}</div></div>
+  </div>
+  <div class="card"><div class="ctitle">Nouvelle consultation</div>
+  <div class="g3">
+    <div class="fg"><label>Code patient</label><select id="c-pat" onchange="fillConsPat()">${patOpts}</select></div>
+    <div class="fg"><label>Nom (auto)</label><input id="c-nom" readonly placeholder="Auto"></div>
+    <div class="fg"><label>Date</label><input type="date" id="c-date" value="${auj()}"></div>
+  </div>
+  <div class="g3">
+    <div class="fg"><label>Type</label><select id="c-type"><option>Consultation générale</option><option>Urgence</option><option>Suivi</option><option>Pédiatrie</option><option>Maternité</option><option>Chirurgie mineure</option><option>CPN</option><option>CPoN</option></select></div>
+    <div class="fg"><label>Température (°C)</label><input type="number" id="c-temp" step="0.1" placeholder="37.0"></div>
+    <div class="fg"><label>TA (mmHg)</label><input id="c-ta" placeholder="120/80"></div>
+  </div>
+  <div class="g2">
+    <div class="fg"><label>Diagnostic</label><textarea id="c-diag" placeholder="Diagnostic principal..."></textarea></div>
+    <div class="fg"><label>Ordonnance / Traitement</label>
+      <button type="button" class="btn" style="font-size:10px;padding:3px 8px;margin-bottom:5px;background:var(--GL);color:var(--GD);border-color:var(--G)" onclick="afficherMedsDispos()">Voir medicaments disponibles en pharmacie</button>
+      <textarea id="c-ordo" placeholder="Médicaments, dosages, durée..."></textarea>
+      <div id="meds-dispos" style="display:none;margin-top:5px;max-height:160px;overflow-y:auto;background:var(--GL);border-radius:5px;padding:7px;font-size:11px"></div>
+    </div>
+  </div>
+  <div class="card" style="background:var(--BL);margin:0 0 10px;padding:12px">
+    <div class="ctitle">Prescrire des examens biologiques</div>
+    <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+      ${['Tous','Hématologie','Biochimie','Sérologie','Parasitologie','Urologie','Hormonologie'].map(cat=>`<button class="mois-btn" onclick="filtrerExamens('${cat}')" id="fex-${cat}">${cat}</button>`).join('')}
+    </div>
+    <div id="exams-liste" style="max-height:220px;overflow-y:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px"></div>
+    <div style="margin-top:8px;padding:7px;background:#fff;border-radius:5px;font-size:11px;color:var(--MUTED)">
+      Sélectionnés : <strong id="exams-selected-count">0</strong> — <span id="exams-selected-list" style="color:var(--BD)">—</span>
+    </div>
+  </div>
+  <div class="fg"><label>Observations</label><textarea id="c-obs" placeholder="Notes cliniques..."></textarea></div>
+  <div class="fg"><label>Montant consultation (GNF)</label><input type="number" id="c-mont" placeholder="0" min="0"></div>
+  <div class="br"><button class="btn btnp" onclick="sauverConsult()">Enregistrer la consultation</button></div></div>
+  <div class="card"><div class="ctitle">Consultations du mois</div><div class="tw"><table><thead><tr><th>Date</th><th>Code</th><th>Patient</th><th>Type</th><th>Diagnostic</th><th>Examens demandés</th><th>Montant</th></tr></thead>
+  <tbody>${cons.map(c=>`<tr><td>${c.date}</td><td><code>${c.patId||'—'}</code></td><td>${c.nomPatient}</td><td><span class="badge ${c.type==='Urgence'?'br2':c.type==='Suivi'?'bg2':'bb'}">${c.type}</span></td><td>${c.diagnostic||'—'}</td><td style="max-width:120px">${c.exams||'—'}</td><td>${fmt(c.montant||0)}</td></tr>`).join('')||'<tr><td colspan="7" class="muted" style="text-align:center;padding:14px">Aucune consultation</td></tr>'}</tbody></table></div></div></div>`);
+  setTimeout(()=>filtrerExamens('Tous'),10);
+}
+async function fillConsPat(){
+  const db=await getDB();const id=document.getElementById('c-pat')?.value;
+  const p=db.patients.find(x=>x.id===id);
+  const el=document.getElementById('c-nom');if(el)el.value=p?p.nom:'';
+}
+
+async function afficherMedsDispos(){
+  const el=document.getElementById('meds-dispos');if(!el)return;
+  if(el.style.display!=='none'){el.style.display='none';return;}
+  const db=await getDB();
+  const meds=db.pharmacie.medicaments.filter(m=>(m.stock||0)>0);
+  el.style.display='block';
+  el.innerHTML=meds.length
+    ?'<strong>Medicaments disponibles :</strong><br>'+meds.map(m=>'<span style="cursor:pointer;display:inline-block;margin:2px;padding:2px 7px;background:#fff;border:1px solid var(--BDC);border-radius:4px" onclick="ajouterMedOrdo(\''+m.code+'\',\''+m.des+'\',\''+m.forme+'\')">'+(m.code)+' — '+(m.des)+' ['+(m.stock)+']</span>').join(' ')
+    :'<span class="muted">Aucun medicament disponible.</span>';
+}
+function ajouterMedOrdo(code,des,forme){
+  const el=document.getElementById('c-ordo');
+  if(el)el.value+=(el.value?'\n':'')+code+' — '+des+' ('+forme+') : dose, frequence, duree';
+}
+function filtrerExamens(cat){
+  document.querySelectorAll('[id^="fex-"]').forEach(b=>b.classList.remove('on'));
+  const btn=document.getElementById('fex-'+cat);if(btn)btn.classList.add('on');
+  const liste=cat==='Tous'?EXAMENS_LABO:EXAMENS_LABO.filter(e=>e.cat===cat);
+  const el=document.getElementById('exams-liste');if(!el)return;
+  el.innerHTML=liste.map(e=>'<label style="display:flex;align-items:flex-start;gap:5px;padding:4px 6px;background:#fff;border-radius:4px;cursor:pointer;font-size:10px;border:1px solid var(--BDC)"><input type="checkbox" id="ex-'+e.code+'" onchange="updateExamsSelection()" style="margin-top:2px;flex-shrink:0"><div><strong>'+e.code+'</strong> — '+e.nom.split('—')[0]+'<br><span style="color:var(--MUTED);font-size:9px">'+e.bornes+'</span></div></label>').join('');
+}
+function updateExamsSelection(){
+  const sel=EXAMENS_LABO.filter(e=>{const el=document.getElementById('ex-'+e.code);return el&&el.checked;});
+  const cnt=document.getElementById('exams-selected-count');const lst=document.getElementById('exams-selected-list');
+  if(cnt)cnt.textContent=sel.length;
+  if(lst)lst.textContent=sel.length?sel.map(e=>e.code).join(', '):'—';
+}
+function getSelectedExams(){
+  return EXAMENS_LABO.filter(e=>{const el=document.getElementById('ex-'+e.code);return el&&el.checked;})
+    .map(e=>e.code+' — '+e.nom.split('—')[0].trim()+' | Bornes: '+e.bornes).join('\n');
+}
+async function sauverConsult(){
+  const db=await getDB();
+  const patId=document.getElementById('c-pat')?.value;
+  const nomPatient=document.getElementById('c-nom')?.value||'Anonyme';
+  const dateVal=document.getElementById('c-date')?.value||auj();
+  const d=new Date(dateVal);
+  const montant=parseFloat(document.getElementById('c-mont')?.value)||0;
+  const exams=getSelectedExams();
+  const consId='CON-'+Date.now();
+  db.consultations.push({id:consId,patId,nomPatient,date:dateVal,mois:d.getMonth(),annee:d.getFullYear(),type:document.getElementById('c-type')?.value||'Consultation générale',medecin:SESSION.label,temp:document.getElementById('c-temp')?.value||'',ta:document.getElementById('c-ta')?.value||'',diagnostic:document.getElementById('c-diag')?.value||'',ordonnance:document.getElementById('c-ordo')?.value||'',exams,obs:document.getElementById('c-obs')?.value||'',montant});
+  // Mettre à jour dernière visite patient
+  if(patId){const p=db.patients.find(x=>x.id===patId);if(p)p.derniereVisite=dateVal;}
+  // Créer demande examen si rempli
+  if(exams){
+    db.examens.push({id:'EXA-'+Date.now(),consId,patId,nomPatient,date:dateVal,mois:d.getMonth(),annee:d.getFullYear(),examens:exams,medecin:SESSION.label,statut:'Demandé',resultats:'',montant:0});
+    await sf('examens',db.examens);
+  }
+  // Enregistrer en facturation consultation
+  if(montant>0){
+    db.facturation.consultations.push({id:'FC-'+Date.now(),patId,nomPatient,date:dateVal,mois:d.getMonth(),annee:d.getFullYear(),montant,ref:consId,statut:'En attente'});
+    await sf('facturation',db.facturation);
+  }
+  await sf('consultations',db.consultations);sf('patients',db.patients);
+  await logAudit('Consultation',nomPatient);aller('consultations');
+}
+
+// ═══ EXAMENS BIOLOGIQUES (Médecin → demande) ══════════════════
+async function examens(){
+  const db=await getDB();
+  const exMs=db.examens.filter(e=>e.mois===curMois&&e.annee===curAnnee);
+  aff(`<div class="page on"><div class="ptitle"><span>Demandes examens — ${MOIS[curMois]} ${curAnnee}</span>${barA('examens')}</div>${barM('examens')}
+  <div class="info-bar">Les demandes créées lors de la consultation apparaissent ici. Le laboratoire les traite et saisit les résultats.</div>
+  <div class="card"><div class="ctitle">Examens du mois</div><div class="tw"><table><thead><tr><th>Date</th><th>Code patient</th><th>Patient</th><th>Examens demandés</th><th>Médecin</th><th>Statut</th><th>Résultats</th></tr></thead>
+  <tbody>${exMs.map(e=>`<tr><td>${e.date}</td><td><code>${e.patId||'—'}</code></td><td>${e.nomPatient}</td><td style="max-width:160px;font-size:11px">${e.examens}</td><td>${e.medecin}</td><td><span class="badge ${e.statut==='Résultat disponible'?'bg2':e.statut==='En cours'?'bt':'ba'}">${e.statut}</span></td><td style="max-width:150px;font-size:11px">${e.resultats||'—'}</td></tr>`).join('')||'<tr><td colspan="7" class="muted" style="text-align:center;padding:14px">Aucune demande ce mois</td></tr>'}</tbody></table></div></div></div>`);
+}
+
+// ═══ VACCINATION / PF / CPoN ══════════════════════════════════
+function vaccination_med(){pageVaccin();}
+function vaccination_inf(){pageVaccin();}
+async function pageVaccin(){
+  const db=await getDB();
+  let tab='vaccin';
+  const tabBar=`<div class="section-tab">
+    <button class="stab on" id="tab-vaccin" onclick="switchVaccTab('vaccin')">Vaccination PEV</button>
+    <button class="stab" id="tab-pf" onclick="switchVaccTab('pf')">Planification familiale</button>
+    <button class="stab" id="tab-cpn" onclick="switchVaccTab('cpn')">Consultation postnatale</button>
+  </div>`;
+  aff(`<div class="page on"><div class="ptitle">Vaccination / PF / CPoN</div>${tabBar}
+  <div id="vacc-content">${buildVaccinForm(db)}</div></div>`);
+}
+async function switchVaccTab(tab){
+  document.querySelectorAll('.stab').forEach(b=>b.classList.remove('on'));
+  const el=document.getElementById('tab-'+tab);if(el)el.classList.add('on');
+  const db=await getDB();
+  const el2=document.getElementById('vacc-content');
+  if(tab==='vaccin')el2.innerHTML=buildVaccinForm(db);
+  else if(tab==='pf')el2.innerHTML=buildPFForm(db);
+  else el2.innerHTML=buildCPoNForm(db);
+}
+async function buildVaccinForm(db){
+  const patOpts='<option value="">— Code patient —</option>'+db.patients.map(p=>`<option value="${p.id}">${p.id} — ${p.nom}</option>`).join('');
+  const liste=db.vaccination.filter(v=>v.mois===curMois&&v.annee===curAnnee);
+  return`<div class="card"><div class="ctitle">Enregistrement vaccination (Registre PEV SIS-PEV-R-01)</div>
+  <div class="g4">
+    <div class="fg"><label>Code patient</label><select id="v-pat" onchange="fillVacPat()">${patOpts}</select></div>
+    <div class="fg"><label>Nom (auto)</label><input id="v-nom" placeholder="Auto"></div>
+    <div class="fg"><label>N° Fiche vaccination / CPN</label><input id="v-fiche" placeholder="MM/XXX"></div>
+    <div class="fg"><label>Date</label><input type="date" id="v-date" value="${auj()}"></div>
+  </div>
+  <div class="g4">
+    <div class="fg"><label>Âge (mois)</label><input type="number" id="v-age" placeholder="0" min="0" oninput="calcAgeCode()"></div>
+    <div class="fg"><label>Code âge (auto)</label><input id="v-agecode" readonly placeholder="A/B/C"></div>
+    <div class="fg"><label>Sexe</label><select id="v-sexe"><option value="M">Masculin (M)</option><option value="F">Féminin (F)</option></select></div>
+    <div class="fg"><label>Provenance</label><select id="v-prov"><option value="">Aire de santé (ZC)</option><option value="H">Hors aire (HZC)</option></select></div>
+  </div>
+  <div class="card" style="background:var(--BL);margin:0 0 10px">
+    <div class="ctitle">Vaccins enfants administrés (cocher ceux administrés)</div>
+    <div class="g5" style="margin-bottom:8px">
+      ${['BCG','VPO0','VPO1','VPO2','VPO3','VPI1','VPI2'].map(v=>`<label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer"><input type="checkbox" id="vac-${v}"> ${v}</label>`).join('')}
+    </div>
+    <div class="g5" style="margin-bottom:8px">
+      ${['PENTA1','PENTA2','PENTA3','PCV1','PCV2','PCV3'].map(v=>`<label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer"><input type="checkbox" id="vac-${v}"> ${v}</label>`).join('')}
+    </div>
+    <div class="g5" style="margin-bottom:8px">
+      ${['ROTA1','ROTA2','VAP1','VAP2','VAP3','VAA','VARR1','VARR2'].map(v=>`<label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer"><input type="checkbox" id="vac-${v}"> ${v}</label>`).join('')}
+    </div>
+    <div class="g5">
+      ${['MenA','VAP4'].map(v=>`<label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer"><input type="checkbox" id="vac-${v}"> ${v}</label>`).join('')}
+      <label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer"><input type="checkbox" id="vac-MILDA"> MILDA distribuée</label>
+    </div>
+  </div>
+  <div class="card" style="background:var(--GL);margin:0 0 10px">
+    <div class="ctitle">Vaccins femmes / jeunes filles</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      ${['TD1','TD2','TD3','TD4','TD5','HPV1','HPV2'].map(v=>`<label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer"><input type="checkbox" id="vac-${v}"> ${v}</label>`).join('')}
+    </div>
+    <div class="g2" style="margin-top:8px">
+      <div class="fg"><label>Âge femme (années)</label><input type="number" id="v-agefem" placeholder="0"></div>
+      <div class="fg"><label>Provenance femme</label><select id="v-provfem"><option value="Z">Aire de santé (Z)</option><option value="H">Hors aire (H)</option></select></div>
+    </div>
+  </div>
+  <div class="fg"><label>Prime vaccination (GNF)</label><input type="number" id="v-prime" placeholder="0" min="0"></div>
+  <div class="br"><button class="btn btnp" onclick="sauverVaccin()">Enregistrer la vaccination</button></div></div>
+  <div class="card"><div class="ctitle">Registre vaccinations — ${MOIS[curMois]} ${curAnnee}</div><div class="tw"><table><thead><tr><th>Date</th><th>N° Fiche</th><th>Code Pat.</th><th>Patient</th><th>Âge</th><th>Code</th><th>Vaccins administrés</th><th>MILDA</th></tr></thead>
+  <tbody>${liste.map(v=>`<tr><td>${v.date}</td><td>${v.fiche||'—'}</td><td><code>${v.patId||'—'}</code></td><td>${v.nomPatient}</td><td>${v.age||'—'}m</td><td><span class="badge bb">${v.ageCode||'—'}</span></td><td style="font-size:10px;max-width:180px">${(v.vaccins||[]).join(', ')||'—'}</td><td>${v.milda?'✓ Oui':'—'}</td></tr>`).join('')||'<tr><td colspan="8" class="muted" style="text-align:center;padding:14px">Aucune vaccination ce mois</td></tr>'}</tbody></table></div></div>`;
+}
+function calcAgeCode(){
+  const age=parseInt(document.getElementById('v-age')?.value)||0;
+  const el=document.getElementById('v-agecode');
+  if(el) el.value=age<=11?'A':age<=23?'B':'C';
+}
+async function fillVacPat(){
+  const db=await getDB();const id=document.getElementById('v-pat')?.value;
+  const p=db.patients.find(x=>x.id===id);
+  const el=document.getElementById('v-nom');if(el)el.value=p?p.nom:'';
+}
+async function sauverVaccin(){
+  const db=await getDB();
+  const nomPatient=document.getElementById('v-nom')?.value||'Anonyme';
+  const dateVal=document.getElementById('v-date')?.value||auj();
+  const d=new Date(dateVal);
+  const vaccinsAdm=[...VACCINS_ENF,...VACCINS_FEM].filter(v=>{const el=document.getElementById('vac-'+v);return el&&el.checked;});
+  const milda=document.getElementById('vac-MILDA')?.checked||false;
+  const prime=parseFloat(document.getElementById('v-prime')?.value)||0;
+  db.vaccination.push({id:'VAC-'+Date.now(),patId:document.getElementById('v-pat')?.value,nomPatient,fiche:document.getElementById('v-fiche')?.value||'',date:dateVal,mois:d.getMonth(),annee:d.getFullYear(),age:document.getElementById('v-age')?.value||'',ageFem:document.getElementById('v-agefem')?.value||'',ageCode:document.getElementById('v-agecode')?.value||'',sexe:document.getElementById('v-sexe')?.value||'M',prov:document.getElementById('v-prov')?.value||'',provFem:document.getElementById('v-provfem')?.value||'Z',vaccins:vaccinsAdm,milda,prime,operateur:SESSION.label});
+  // Déduire du stock vaccins
+  vaccinsAdm.forEach(v=>{
+    const sv=db.pharmacie.vaccins_stock.find(x=>x.code===v);
+    if(sv&&sv.stock>0)sv.stock--;
+  });
+  if(milda){const m=db.pharmacie.milda.find(x=>x.code==='MILDA');if(m&&m.stock>0)m.stock--;}
+  await sf('vaccination',db.vaccination);
+  await sf('pharmacie',db.pharmacie);
+  await logAudit('Vaccination',nomPatient+' — '+vaccinsAdm.join(', '));
+  alert('Vaccination enregistrée pour : '+nomPatient);
+  switchVaccTab('vaccin');
+}
+async function buildPFForm(db){
+  const patOpts='<option value="">— Code patient —</option>'+db.patients.map(p=>`<option value="${p.id}">${p.id} — ${p.nom}</option>`).join('');
+  const liste=db.planif_fam.filter(p=>p.mois===curMois&&p.annee===curAnnee);
+  return`<div class="card"><div class="ctitle">Planification familiale</div>
+  <div class="g3">
+    <div class="fg"><label>Code patient</label><select id="pf-pat" onchange="fillPFPat()">${patOpts}</select></div>
+    <div class="fg"><label>Nom</label><input id="pf-nom" placeholder="Auto"></div>
+    <div class="fg"><label>N° Dossier PF</label><input id="pf-doss" placeholder="XXXXXMMAA"></div>
+  </div>
+  <div class="g4">
+    <div class="fg"><label>Date</label><input type="date" id="pf-date" value="${auj()}"></div>
+    <div class="fg"><label>Âge (ans)</label><input type="number" id="pf-age" placeholder="0"></div>
+    <div class="fg"><label>Groupe d'âge</label><select id="pf-grp"><option value="A">A (10-19 ans)</option><option value="B">B (20 ans et +)</option></select></div>
+    <div class="fg"><label>Type utilisatrice</label><select id="pf-type"><option>Spontanée</option><option>Post partum immédiat</option><option>Post abortum</option><option>RECO/ASC</option><option>Régulière</option></select></div>
+  </div>
+  <div class="g3">
+    <div class="fg"><label>Méthode contraceptive</label><select id="pf-meth"><option>COC (pilule combinée)</option><option>COP (pilule progestative)</option><option>Injection DMPA-IM</option><option>DMPA-SC (auto-injection)</option><option>Implant</option><option>DIU cuivre</option><option>DIU hormonal</option><option>Préservatif masculin</option><option>Préservatif féminin</option><option>MAMA</option></select></div>
+    <div class="fg"><label>Quantité fournie</label><input type="number" id="pf-qte" placeholder="1" min="1"></div>
+    <div class="fg"><label>Observations</label><input id="pf-obs" placeholder="Remarques..."></div>
+  </div>
+  <div class="br"><button class="btn btnp" onclick="sauverPF()">Enregistrer</button></div></div>
+  <div class="card"><div class="ctitle">Registre PF — ${MOIS[curMois]} ${curAnnee}</div><div class="tw"><table><thead><tr><th>Date</th><th>Code</th><th>Patiente</th><th>Âge</th><th>Gr.</th><th>Type</th><th>Méthode</th><th>Qté</th></tr></thead>
+  <tbody>${liste.map(p=>`<tr><td>${p.date}</td><td><code>${p.patId||'—'}</code></td><td>${p.nomPatient}</td><td>${p.age||'—'}</td><td><span class="badge bb">${p.grp||'—'}</span></td><td>${p.typeUtil||'—'}</td><td>${p.methode}</td><td>${p.qte||1}</td></tr>`).join('')||'<tr><td colspan="8" class="muted" style="text-align:center;padding:14px">Aucun enregistrement</td></tr>'}</tbody></table></div></div>`;
+}
+async function fillPFPat(){
+  const db=await getDB();const id=document.getElementById('pf-pat')?.value;
+  const p=db.patients.find(x=>x.id===id);
+  const el=document.getElementById('pf-nom');if(el)el.value=p?p.nom:'';
+}
+async function sauverPF(){
+  const db=await getDB();
+  const nom=document.getElementById('pf-nom')?.value||'Anonyme';
+  const dateVal=document.getElementById('pf-date')?.value||auj();
+  const d=new Date(dateVal);
+  db.planif_fam.push({id:'PF-'+Date.now(),patId:document.getElementById('pf-pat')?.value,nomPatient:nom,dossier:document.getElementById('pf-doss')?.value||'',date:dateVal,mois:d.getMonth(),annee:d.getFullYear(),age:document.getElementById('pf-age')?.value||'',grp:document.getElementById('pf-grp')?.value||'B',typeUtil:document.getElementById('pf-type')?.value||'',methode:document.getElementById('pf-meth')?.value||'',qte:document.getElementById('pf-qte')?.value||1,obs:document.getElementById('pf-obs')?.value||'',operateur:SESSION.label});
+  await sf('planif_fam',db.planif_fam);await logAudit('PF',nom);alert('PF enregistrée');switchVaccTab('pf');
+}
+async function buildCPoNForm(db){
+  const patOpts='<option value="">— Code patient —</option>'+db.patients.map(p=>`<option value="${p.id}">${p.id} — ${p.nom}</option>`).join('');
+  const liste=db.cpn.filter(c=>c.mois===curMois&&c.annee===curAnnee);
+  return`<div class="card"><div class="ctitle">Consultation Postnatale (CPoN)</div>
+  <div class="g3">
+    <div class="fg"><label>Code patient</label><select id="cpn-pat" onchange="fillCPoNPat()">${patOpts}</select></div>
+    <div class="fg"><label>Nom</label><input id="cpn-nom" placeholder="Auto"></div>
+    <div class="fg"><label>N° Fiche CPN</label><input id="cpn-fiche" placeholder="AA/NNN"></div>
+  </div>
+  <div class="g4">
+    <div class="fg"><label>Date CPoN</label><input type="date" id="cpn-date" value="${auj()}"></div>
+    <div class="fg"><label>Âge (ans)</label><input type="number" id="cpn-age" placeholder="0"></div>
+    <div class="fg"><label>N° visite</label><select id="cpn-num"><option>CPoN 1</option><option>CPoN 2</option><option>CPoN 3</option></select></div>
+    <div class="fg"><label>Lieu accouchement</label><select id="cpn-lieu"><option>FoSa</option><option>Domicile</option></select></div>
+  </div>
+  <div class="g4">
+    <div class="fg"><label>Type allaitement</label><select id="cpn-all"><option>Maternel</option><option>Artificiel</option><option>Mixte</option></select></div>
+    <div class="fg"><label>Vit. A donnée</label><select id="cpn-vita"><option>Oui</option><option>Non</option><option>NA</option></select></div>
+    <div class="fg"><label>Fer/Ac. Folique</label><select id="cpn-fer"><option>Oui</option><option>Non</option><option>NA</option></select></div>
+    <div class="fg"><label>MILDA distribuée</label><select id="cpn-milda"><option>Oui</option><option>Non</option></select></div>
+  </div>
+  <div class="g3">
+    <div class="fg"><label>Contraception acceptée</label><select id="cpn-contra"><option>Non</option><option>Oui — Gr. A (10-19 ans)</option><option>Oui — Gr. B (20 ans+)</option></select></div>
+    <div class="fg"><label>Dépistage VIH</label><select id="cpn-vih"><option>Non effectué</option><option>Négatif</option><option>Positif (VIH1)</option><option>Indéterminé</option><option>Connu positif</option></select></div>
+    <div class="fg"><label>Fistule obstétricale</label><select id="cpn-fist"><option>Non</option><option>Oui — référée</option><option>Oui — prise en charge</option></select></div>
+  </div>
+  <div class="br"><button class="btn btnp" onclick="sauverCPoN()">Enregistrer CPoN</button></div></div>
+  <div class="card"><div class="ctitle">Registre CPoN — ${MOIS[curMois]} ${curAnnee}</div><div class="tw"><table><thead><tr><th>Date</th><th>Code</th><th>Patiente</th><th>N° Visite</th><th>Allaitement</th><th>Vit.A</th><th>MILDA</th><th>VIH</th></tr></thead>
+  <tbody>${liste.map(c=>`<tr><td>${c.date}</td><td><code>${c.patId||'—'}</code></td><td>${c.nomPatient}</td><td><span class="badge bb">${c.numVisite}</span></td><td>${c.allaitement}</td><td>${c.vitA}</td><td>${c.milda==='Oui'?'✓ Oui':'—'}</td><td><span class="badge ${c.vih==='Positif (VIH1)'?'br2':'bg2'}">${c.vih}</span></td></tr>`).join('')||'<tr><td colspan="8" class="muted" style="text-align:center;padding:14px">Aucun enregistrement</td></tr>'}</tbody></table></div></div>`;
+}
+async function fillCPoNPat(){
+  const db=await getDB();const id=document.getElementById('cpn-pat')?.value;
+  const p=db.patients.find(x=>x.id===id);
+  const el=document.getElementById('cpn-nom');if(el)el.value=p?p.nom:'';
+}
+async function sauverCPoN(){
+  const db=await getDB();
+  const nom=document.getElementById('cpn-nom')?.value||'Anonyme';
+  const dateVal=document.getElementById('cpn-date')?.value||auj();
+  const d=new Date(dateVal);
+  db.cpn.push({id:'CPN-'+Date.now(),patId:document.getElementById('cpn-pat')?.value,nomPatient:nom,fiche:document.getElementById('cpn-fiche')?.value||'',date:dateVal,mois:d.getMonth(),annee:d.getFullYear(),numVisite:document.getElementById('cpn-num')?.value||'CPoN 1',lieuAcc:document.getElementById('cpn-lieu')?.value||'FoSa',allaitement:document.getElementById('cpn-all')?.value||'Maternel',vitA:document.getElementById('cpn-vita')?.value||'Non',fer:document.getElementById('cpn-fer')?.value||'Non',milda:document.getElementById('cpn-milda')?.value||'Non',contra:document.getElementById('cpn-contra')?.value||'Non',vih:document.getElementById('cpn-vih')?.value||'Non effectué',fistule:document.getElementById('cpn-fist')?.value||'Non',operateur:SESSION.label});
+  await sf('cpn',db.cpn);await logAudit('CPoN',nom);alert('CPoN enregistrée');switchVaccTab('cpn');
+}
+
+// ═══ LABORATOIRE ══════════════════════════════════════════════
+async function labo_examens(){
+  const db=await getDB();
+  const enAtt=db.examens.filter(e=>e.statut==='Demandé');
+  aff(`<div class="page on"><div class="ptitle">Examens biologiques</div>
+  <div class="warn-bar" style="${enAtt.length?'':'display:none'}">${enAtt.length} examen(s) en attente de traitement.</div>
+  <div class="card"><div class="ctitle">Examens en attente</div><div class="tw"><table><thead><tr><th>Date</th><th>Code Pat.</th><th>Patient</th><th>Examens demandés</th><th>Médecin</th><th>Statut</th><th>Action</th></tr></thead>
+  <tbody>${enAtt.map(e=>`<tr><td>${e.date}</td><td><code>${e.patId||'—'}</code></td><td>${e.nomPatient}</td><td>${e.examens}</td><td>${e.medecin}</td><td><span class="badge ba">${e.statut}</span></td>
+  <td><button class="btn btng" style="font-size:10px;padding:2px 6px" onclick="traiterExamen('${e.id}')">Traiter</button></td></tr>`).join('')||'<tr><td colspan="7" class="muted" style="text-align:center;padding:14px">Aucun examen en attente</td></tr>'}</tbody></table></div></div>
+  <div id="form-examen"></div></div>`);
+}
+async function traiterExamen(id){
+  const db=await getDB();const e=db.examens.find(x=>x.id===id);if(!e)return;
+  const el=document.getElementById('form-examen');
+  el.innerHTML=`<div class="card" style="border:2px solid var(--T)"><div class="ctitle">Saisir résultats — ${e.nomPatient}</div>
+  <div class="info-bar">Examens demandés : <strong>${e.examens}</strong></div>
+  <div class="fg"><label>Résultats détaillés</label><textarea id="res-text" placeholder="Saisir les résultats par examen..." style="min-height:100px"></textarea></div>
+  <div class="g2">
+    <div class="fg"><label>Montant (GNF)</label><input type="number" id="res-mont" placeholder="0" min="0"></div>
+    <div class="fg"><label>Statut</label><select id="res-statut"><option>Résultat disponible</option><option>En cours</option></select></div>
+  </div>
+  <div class="br"><button class="btn btnp" onclick="sauverResultat('${id}')">Enregistrer les résultats</button></div></div>`;
+  el.scrollIntoView({behavior:'smooth'});
+}
+async function sauverResultat(id){
+  const db=await getDB();const e=db.examens.find(x=>x.id===id);if(!e)return;
+  const montant=parseFloat(document.getElementById('res-mont')?.value)||0;
+  e.resultats=document.getElementById('res-text')?.value||'';
+  e.statut=document.getElementById('res-statut')?.value||'Résultat disponible';
+  e.montant=montant;e.laboPar=SESSION.label;e.dateResultat=auj();
+  // Enregistrer en facturation examens
+  if(montant>0){
+    db.facturation.examens.push({id:'FE-'+Date.now(),patId:e.patId,nomPatient:e.nomPatient,date:auj(),mois:new Date().getMonth(),annee:new Date().getFullYear(),montant,ref:id,statut:'En attente'});
+    await sf('facturation',db.facturation);
+  }
+  await sf('examens',db.examens);await logAudit('Résultat examen',e.nomPatient);
+  alert('Résultats enregistrés');aller('labo_examens');
+}
+async function labo_resultats(){
+  const db=await getDB();
+  const faits=db.examens.filter(e=>e.statut==='Résultat disponible');
+  const recM=db.facturation.examens.filter(f=>f.mois===curMois&&f.annee===curAnnee).reduce((a,f)=>a+f.montant,0);
+  aff(`<div class="page on"><div class="ptitle"><span>Résultats & rapports labo — ${MOIS[curMois]} ${curAnnee}</span>${barA('labo_resultats')}</div>${barM('labo_resultats')}
+  <div class="metrics" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+    <div class="metric"><div class="ml">Résultats disponibles</div><div class="mv mvg">${faits.length}</div></div>
+    <div class="metric"><div class="ml">Total examens</div><div class="mv mvb">${db.examens.length}</div></div>
+    <div class="metric"><div class="ml">Recette labo ce mois</div><div class="mv mvt">${fmt(recM)}</div></div>
+  </div>
+  <div class="card"><div class="ctitle">Ma contribution à la comptabilité — ${MOIS[curMois]} ${curAnnee}</div>
+  <div class="ok-bar">Ces données sont visibles par la comptabilité et le directeur pour assurer la transparence financière.</div>
+  <div class="tw"><table><thead><tr><th>Date</th><th>Code Pat.</th><th>Patient</th><th>Examens</th><th>Résultats</th><th class="tr">Montant GNF</th><th>Laborantin</th></tr></thead>
+  <tbody>${db.facturation.examens.filter(f=>f.mois===curMois&&f.annee===curAnnee).map(f=>{const e=db.examens.find(x=>x.id===f.ref);return`<tr><td>${f.date}</td><td><code>${f.patId||'—'}</code></td><td>${f.nomPatient}</td><td style="font-size:10px">${e?e.examens:'—'}</td><td style="font-size:10px;max-width:140px">${e?e.resultats:'—'}</td><td class="tr">${fmt(f.montant)}</td><td>${e?e.laboPar||'—':'—'}</td></tr>`;}).join('')||'<tr><td colspan="7" class="muted" style="text-align:center;padding:14px">Aucun résultat ce mois</td></tr>'}
+  </tbody><tfoot><tr class="totrow"><td colspan="5"><strong>Total recette labo</strong></td><td class="tr"><strong>${fmt(recM)}</strong></td><td></td></tr></tfoot></table></div></div></div>`);
+}
+
+// ═══ PHARMACIE ════════════════════════════════════════════════
+async function stock_med(){
+  const db=await getDB();
+  const alerte=db.pharmacie.medicaments.filter(m=>(m.stock||0)<=(m.seuil||5));
+  aff(`<div class="page on"><div class="ptitle">Stock médicaments</div>
+  ${alerte.length?`<div class="warn-bar">⚠ ${alerte.length} médicament(s) en stock faible ou épuisé.</div>`:''}
+  <div class="card"><div class="ctitle">Ajouter / modifier un médicament</div>
+  <div class="g3">
+    <div class="fg"><label>Code</label><input id="med-code" placeholder="ex: AMX500" oninput="this.value=this.value.toUpperCase()"></div>
+    <div class="fg"><label>Désignation</label><input id="med-des" placeholder="Nom du médicament"></div>
+    <div class="fg"><label>Forme</label><select id="med-forme"><option>Comprimé</option><option>Gélule</option><option>Sirop</option><option>Injectable</option><option>Pommade</option><option>Sachet</option><option>Gouttes</option></select></div>
+  </div>
+  <div class="g4">
+    <div class="fg"><label>Stock actuel</label><input type="number" id="med-stock" placeholder="0" min="0"></div>
+    <div class="fg"><label>Seuil alerte</label><input type="number" id="med-seuil" placeholder="10" min="0"></div>
+    <div class="fg"><label>Prix achat (GNF)</label><input type="number" id="med-pa" placeholder="0"></div>
+    <div class="fg"><label>Prix vente (GNF)</label><input type="number" id="med-pv" placeholder="0"></div>
+  </div>
+  <div class="fg" style="max-width:280px"><label>Date péremption</label><input type="date" id="med-per"></div>
+  <div class="br"><button class="btn btnp" onclick="sauverMed()">Enregistrer</button><button class="btn" onclick="effacerMed()">Effacer</button></div></div>
+  <div class="card"><div class="ctitle">Catalogue médicaments</div><div class="tw"><table><thead><tr><th>Code</th><th>Désignation</th><th>Forme</th><th>Stock</th><th>Seuil</th><th>P.Achat</th><th>P.Vente</th><th>Péremption</th><th>Statut</th><th>Action</th></tr></thead>
+  <tbody>${db.pharmacie.medicaments.map(m=>{const s=(m.stock||0)<=(m.seuil||5)?'<span class="badge br2">Faible</span>':m.stock<=0?'<span class="badge br2">Épuisé</span>':'<span class="badge bg2">OK</span>';return`<tr><td><code>${m.code}</code></td><td><strong>${m.des}</strong></td><td>${m.forme}</td><td><strong>${m.stock||0}</strong></td><td>${m.seuil||5}</td><td>${fmtn(m.pa)} GNF</td><td>${fmtn(m.pv)} GNF</td><td>${m.per||'—'}</td><td>${s}</td><td><button class="btn" style="font-size:10px;padding:2px 6px" onclick="editerMed('${m.code}')">Modifier</button></td></tr>`;}).join('')||'<tr><td colspan="10" class="muted" style="text-align:center;padding:14px">Aucun médicament</td></tr>'}</tbody></table></div></div></div>`);
+}
+async function sauverMed(){
+  const code=document.getElementById('med-code')?.value?.trim()?.toUpperCase();
+  const des=document.getElementById('med-des')?.value?.trim();
+  if(!code||!des){alert('Code et désignation obligatoires');return;}
+  const db=await getDB();
+  const idx=db.pharmacie.medicaments.findIndex(m=>m.code===code);
+  const obj={code,des,forme:document.getElementById('med-forme')?.value||'Comprimé',stock:parseFloat(document.getElementById('med-stock')?.value)||0,seuil:parseFloat(document.getElementById('med-seuil')?.value)||10,pa:parseFloat(document.getElementById('med-pa')?.value)||0,pv:parseFloat(document.getElementById('med-pv')?.value)||0,per:document.getElementById('med-per')?.value||''};
+  if(idx>=0)db.pharmacie.medicaments[idx]=obj;else db.pharmacie.medicaments.push(obj);
+  await sf('pharmacie',db.pharmacie);await logAudit('Médicament',code);effacerMed();aller('stock_med');
+}
+function effacerMed(){['code','des','stock','seuil','pa','pv','per'].forEach(f=>{const e=document.getElementById('med-'+f);if(e)e.value='';});}
+async function editerMed(code){
+  const m=getDB().pharmacie.medicaments.find(x=>x.code===code);if(!m)return;
+  ['code','des','stock','seuil','pa','pv','per'].forEach(f=>{const e=document.getElementById('med-'+f);if(e)e.value=m[f]||'';});
+  const ef=document.getElementById('med-forme');if(ef)ef.value=m.forme;window.scrollTo(0,0);
+}
+async function stock_milda(){
+  const db=await getDB();
+  aff(`<div class="page on"><div class="ptitle">Stock MILDA (Moustiquaires)</div>
+  <div class="card"><div class="ctitle">Ajouter / modifier MILDA</div>
+  <div class="g3">
+    <div class="fg"><label>Code</label><input id="mil-code" placeholder="ex: MILDA-001"></div>
+    <div class="fg"><label>Type / Description</label><input id="mil-des" placeholder="Type de moustiquaire"></div>
+    <div class="fg"><label>Stock actuel</label><input type="number" id="mil-stock" placeholder="0" min="0"></div>
+  </div>
+  <div class="g2">
+    <div class="fg"><label>Seuil alerte</label><input type="number" id="mil-seuil" placeholder="10"></div>
+    <div class="fg"><label>Lot / Date réception</label><input id="mil-lot" placeholder="ex: LOT-2026-01"></div>
+  </div>
+  <div class="br"><button class="btn btnp" onclick="sauverMilda()">Enregistrer</button></div></div>
+  <div class="card"><div class="ctitle">Stock MILDA</div><div class="tw"><table><thead><tr><th>Code</th><th>Description</th><th>Stock</th><th>Seuil</th><th>Lot</th><th>Statut</th></tr></thead>
+  <tbody>${db.pharmacie.milda.map(m=>`<tr><td><code>${m.code}</code></td><td>${m.des}</td><td><strong>${m.stock||0}</strong></td><td>${m.seuil||10}</td><td>${m.lot||'—'}</td><td><span class="badge ${(m.stock||0)<=(m.seuil||10)?'br2':'bg2'}">${(m.stock||0)<=(m.seuil||10)?'Faible':'OK'}</span></td></tr>`).join('')||'<tr><td colspan="6" class="muted" style="text-align:center;padding:14px">Aucun stock MILDA</td></tr>'}</tbody></table></div></div></div>`);
+}
+async function sauverMilda(){
+  const code=document.getElementById('mil-code')?.value?.trim();
+  const des=document.getElementById('mil-des')?.value?.trim();
+  if(!code||!des){alert('Code et description obligatoires');return;}
+  const db=await getDB();
+  const idx=db.pharmacie.milda.findIndex(m=>m.code===code);
+  const obj={code,des,stock:parseFloat(document.getElementById('mil-stock')?.value)||0,seuil:parseFloat(document.getElementById('mil-seuil')?.value)||10,lot:document.getElementById('mil-lot')?.value||''};
+  if(idx>=0)db.pharmacie.milda[idx]=obj;else db.pharmacie.milda.push(obj);
+  await sf('pharmacie',db.pharmacie);aller('stock_milda');
+}
+async function stock_vaccins(){
+  const db=await getDB();
+  aff(`<div class="page on"><div class="ptitle">Stock vaccins</div>
+  <div class="card"><div class="ctitle">Ajouter / mettre à jour un vaccin</div>
+  <div class="g4">
+    <div class="fg"><label>Code vaccin</label><select id="sv-code"><option>BCG</option><option>VPO0</option><option>VPO1</option><option>VPO2</option><option>VPO3</option><option>VPI1</option><option>VPI2</option><option>PENTA1</option><option>PENTA2</option><option>PENTA3</option><option>PCV1</option><option>PCV2</option><option>PCV3</option><option>ROTA1</option><option>ROTA2</option><option>VAP1</option><option>VAP2</option><option>VAP3</option><option>VAA</option><option>VARR1</option><option>VARR2</option><option>MenA</option><option>VAP4</option><option>TD1</option><option>TD2</option><option>TD3</option><option>TD4</option><option>TD5</option><option>HPV1</option><option>HPV2</option></select></div>
+    <div class="fg"><label>Stock (doses)</label><input type="number" id="sv-stock" placeholder="0" min="0"></div>
+    <div class="fg"><label>Seuil alerte</label><input type="number" id="sv-seuil" placeholder="20" min="0"></div>
+    <div class="fg"><label>Date péremption</label><input type="date" id="sv-per"></div>
+  </div>
+  <div class="br"><button class="btn btnp" onclick="sauverVacStock()">Enregistrer</button></div></div>
+  <div class="card"><div class="ctitle">Stock vaccins</div><div class="tw"><table><thead><tr><th>Vaccin</th><th>Stock (doses)</th><th>Seuil</th><th>Péremption</th><th>Statut</th></tr></thead>
+  <tbody>${db.pharmacie.vaccins_stock.map(v=>`<tr><td><strong>${v.code}</strong></td><td><strong>${v.stock||0}</strong></td><td>${v.seuil||20}</td><td>${v.per||'—'}</td><td><span class="badge ${(v.stock||0)<=(v.seuil||20)?'br2':'bg2'}">${(v.stock||0)<=(v.seuil||20)?'Faible':'OK'}</span></td></tr>`).join('')||'<tr><td colspan="5" class="muted" style="text-align:center;padding:14px">Aucun stock vaccin</td></tr>'}</tbody></table></div></div></div>`);
+}
+async function sauverVacStock(){
+  const code=document.getElementById('sv-code')?.value;
+  const db=await getDB();
+  const idx=db.pharmacie.vaccins_stock.findIndex(v=>v.code===code);
+  const obj={code,stock:parseFloat(document.getElementById('sv-stock')?.value)||0,seuil:parseFloat(document.getElementById('sv-seuil')?.value)||20,per:document.getElementById('sv-per')?.value||''};
+  if(idx>=0)db.pharmacie.vaccins_stock[idx]=obj;else db.pharmacie.vaccins_stock.push(obj);
+  await sf('pharmacie',db.pharmacie);aller('stock_vaccins');
+}
+async function dispensation(){
+  const db=await getDB();
+  const patOpts='<option value="">— Code patient —</option>'+db.patients.map(p=>`<option value="${p.id}">${p.id} — ${p.nom}</option>`).join('');
+  aff(`<div class="page on"><div class="ptitle">Dispensation médicaments</div>
+  <div class="info-bar">Saisissez le code patient — toutes ses informations sont chargées automatiquement.</div>
+  <div class="card"><div class="ctitle">Dispenser des médicaments</div>
+  <div class="g3">
+    <div class="fg"><label>Code patient</label><select id="dis-pat" onchange="fillDisPat()">${patOpts}</select></div>
+    <div class="fg"><label>Nom (auto)</label><input id="dis-nom" readonly placeholder="Auto"></div>
+    <div class="fg"><label>Téléphone (auto)</label><input id="dis-tel" readonly placeholder="Auto"></div>
+  </div>
+  <div style="padding:8px;background:var(--BL);border-radius:7px;margin-bottom:10px;font-size:11px" id="dis-infos">— Sélectionnez un patient pour voir ses informations —</div>
+  <div class="g3">
+    <div class="fg"><label>Médicament</label><select id="dis-med" onchange="fillDisMed()">${'<option value="">— Sélectionner —</option>'+db.pharmacie.medicaments.map(m=>`<option value="${m.code}">${m.code} — ${m.des} (stock: ${m.stock||0})</option>`).join('')}</select></div>
+    <div class="fg"><label>Quantité</label><input type="number" id="dis-qte" placeholder="1" min="1" oninput="calcDis()"></div>
+    <div class="fg"><label>Prix unitaire (auto)</label><input id="dis-pu" readonly placeholder="Auto"></div>
+  </div>
+  <div class="g2">
+    <div class="fg"><label>Total GNF (auto)</label><input id="dis-tot" readonly></div>
+    <div class="fg"><label>Ordonnance référence</label><input id="dis-ordo" placeholder="N° consultation ou ordonnance"></div>
+  </div>
+  <div class="br"><button class="btn btnp" onclick="sauverDis()">Dispenser & déduire du stock</button></div></div>
+  <div class="card"><div class="ctitle">Dispensations du jour</div><div class="tw"><table><thead><tr><th>Code Pat.</th><th>Patient</th><th>Médicament</th><th>Qté</th><th class="tr">Montant GNF</th></tr></thead>
+  <tbody>${db.facturation.pharmacie.filter(f=>f.date===auj()).map(f=>`<tr><td><code>${f.patId||'—'}</code></td><td>${f.nomPatient}</td><td>${f.medicament||'—'}</td><td>${f.qte||1}</td><td class="tr">${fmt(f.montant)}</td></tr>`).join('')||'<tr><td colspan="5" class="muted" style="text-align:center;padding:14px">Aucune dispensation aujourd\'hui</td></tr>'}</tbody></table></div></div></div>`);
+}
+async function fillDisPat(){
+  const db=await getDB();const id=document.getElementById('dis-pat')?.value;
+  const p=db.patients.find(x=>x.id===id);
+  if(p){
+    if(document.getElementById('dis-nom'))document.getElementById('dis-nom').value=p.nom;
+    if(document.getElementById('dis-tel'))document.getElementById('dis-tel').value=p.tel||'—';
+    const el=document.getElementById('dis-infos');
+    if(el)el.innerHTML=`<strong>${p.nom}</strong> | Né(e) le : ${p.naiss||'—'} | Adresse : ${p.adr||'—'} | Gr. sanguin : ${p.sang||'—'} | Antécédents : ${p.ant||'—'}`;
+  }
+}
+async function fillDisMed(){
+  const db=await getDB();const code=document.getElementById('dis-med')?.value;
+  const m=db.pharmacie.medicaments.find(x=>x.code===code);
+  if(m){const el=document.getElementById('dis-pu');if(el)el.value=m.pv||0;calcDis();}
+}
+function calcDis(){const q=parseFloat(document.getElementById('dis-qte')?.value)||0;const p=parseFloat(document.getElementById('dis-pu')?.value)||0;const el=document.getElementById('dis-tot');if(el)el.value=Math.round(q*p).toLocaleString('fr-GN');}
+async function sauverDis(){
+  const db=await getDB();
+  const patId=document.getElementById('dis-pat')?.value;
+  const nom=document.getElementById('dis-nom')?.value||'Anonyme';
+  const medCode=document.getElementById('dis-med')?.value;
+  const qte=parseFloat(document.getElementById('dis-qte')?.value)||1;
+  const pu=parseFloat(document.getElementById('dis-pu')?.value)||0;
+  if(!medCode){alert('Sélectionnez un médicament');return;}
+  const m=db.pharmacie.medicaments.find(x=>x.code===medCode);
+  if(m){
+    if((m.stock||0)<qte){alert('Stock insuffisant ('+m.stock+' disponibles)');return;}
+    m.stock=(m.stock||0)-qte;
+  }
+  const d=new Date();
+  db.facturation.pharmacie.push({id:'FP-'+Date.now(),patId,nomPatient:nom,date:auj(),mois:d.getMonth(),annee:d.getFullYear(),medicament:medCode+(m?' — '+m.des:''),qte,montant:qte*pu,ordo:document.getElementById('dis-ordo')?.value||'',dispensePar:SESSION.label});
+  await sf('pharmacie',db.pharmacie);sf('facturation',db.facturation);
+  await logAudit('Dispensation',nom+' — '+medCode+' x'+qte);
+  alert('Dispensation enregistrée. Stock mis à jour.');aller('dispensation');
+}
+async function commande_phar(){
+  const db=await getDB();
+  const alertes=db.pharmacie.medicaments.filter(m=>(m.stock||0)<=(m.seuil||5));
+  const alertesMilda=db.pharmacie.milda.filter(m=>(m.stock||0)<=(m.seuil||10));
+  const alertesVac=db.pharmacie.vaccins_stock.filter(v=>(v.stock||0)<=(v.seuil||20));
+  aff(`<div class="page on"><div class="ptitle">Commande de stock</div>
+  <div class="warn-bar" style="${alertes.length+alertesMilda.length+alertesVac.length>0?'':'display:none'}">
+    ${alertes.length} méd. en alerte | ${alertesMilda.length} MILDA en alerte | ${alertesVac.length} vaccins en alerte
+  </div>
+  <div class="card"><div class="ctitle">Créer une commande</div>
+  <div class="info-bar">La commande sera envoyée automatiquement à la comptabilité pour paiement et au Directeur (mail/WhatsApp). Une copie est conservée sur la base.</div>
+  <div class="g2">
+    <div class="fg"><label>Catégorie</label><select id="cmd-cat"><option>Médicaments</option><option>MILDA</option><option>Vaccins</option><option>Consommables</option></select></div>
+    <div class="fg"><label>Fournisseur</label><input id="cmd-fourn" placeholder="Nom du fournisseur"></div>
+  </div>
+  <div class="fg"><label>Articles commandés (un par ligne : code — désignation — quantité)</label>
+    <textarea id="cmd-articles" style="min-height:100px" placeholder="ex:&#10;AMX500 — Amoxicilline 500mg — 200 boîtes&#10;BCG — Vaccin BCG — 50 doses"></textarea>
+  </div>
+  <div class="g2">
+    <div class="fg"><label>Montant estimé (GNF)</label><input type="number" id="cmd-mont" placeholder="0" min="0"></div>
+    <div class="fg"><label>Urgence</label><select id="cmd-urgence"><option>Normale</option><option>Urgente</option></select></div>
+  </div>
+  <div class="fg"><label>Justification / motif</label><textarea id="cmd-motif" placeholder="Raison de la commande, stocks épuisés..."></textarea></div>
+  <div class="br"><button class="btn btnp" onclick="sauverCommande()">Soumettre la commande</button></div></div>
+  <div class="card"><div class="ctitle">Historique des commandes</div><div class="tw"><table><thead><tr><th>Date</th><th>Catégorie</th><th>Fournisseur</th><th>Montant</th><th>Urgence</th><th>Statut</th></tr></thead>
+  <tbody>${db.commandes_phar.map(c=>`<tr><td>${c.date}</td><td>${c.cat}</td><td>${c.fourn||'—'}</td><td>${fmt(c.mont||0)}</td><td><span class="badge ${c.urgence==='Urgente'?'br2':'bb'}">${c.urgence}</span></td><td><span class="badge ${c.statut==='Approuvée'?'bg2':c.statut==='Payée'?'bt':c.statut==='Rejetée'?'br2':'ba'}">${c.statut}</span></td></tr>`).join('')||'<tr><td colspan="6" class="muted" style="text-align:center;padding:14px">Aucune commande</td></tr>'}</tbody></table></div></div></div>`);
+}
+async function sauverCommande(){
+  const db=await getDB();
+  const articles=document.getElementById('cmd-articles')?.value?.trim();
+  const mont=parseFloat(document.getElementById('cmd-mont')?.value)||0;
+  if(!articles){alert('Articles obligatoires');return;}
+  const cmd={id:'CMD-'+Date.now(),date:auj(),mois:new Date().getMonth(),annee:new Date().getFullYear(),cat:document.getElementById('cmd-cat')?.value||'Médicaments',fourn:document.getElementById('cmd-fourn')?.value||'',articles,mont,urgence:document.getElementById('cmd-urgence')?.value||'Normale',motif:document.getElementById('cmd-motif')?.value||'',statut:'En attente',soumispar:SESSION.label};
+  db.commandes_phar.push(cmd);sf('commandes_phar',db.commandes_phar);
+  await logAudit('Commande pharmacie','Soumise — '+cmd.cat+' — '+fmt(mont));
+  // Simuler envoi (message alerte)
+  alert(`Commande soumise avec succès !\n\nRéf : ${cmd.id}\nDate : ${cmd.date}\nMontant estimé : ${fmt(mont)}\n\nNotification envoyée à la Comptabilité et au Directeur.\nUne copie est conservée dans la base.`);
+  aller('commande_phar');
+}
+
+// ═══ COMPTABILITÉ ════════════════════════════════════════════
+async function recouvrement(){
+  const db=await getDB();
+  const recC=db.facturation.consultations.filter(f=>f.mois===curMois&&f.annee===curAnnee).reduce((a,f)=>a+(f.montant||0),0);
+  const recE=db.facturation.examens.filter(f=>f.mois===curMois&&f.annee===curAnnee).reduce((a,f)=>a+(f.montant||0),0);
+  const recP=db.facturation.pharmacie.filter(f=>f.mois===curMois&&f.annee===curAnnee).reduce((a,f)=>a+(f.montant||0),0);
+  const depM=db.depenses.filter(d=>d.mois===curMois&&d.annee===curAnnee).reduce((a,d)=>a+(d.montant||0),0);
+  const subM=db.subventions.filter(s=>s.mois===curMois&&s.annee===curAnnee).reduce((a,s)=>a+(s.montant||0),0);
+  const cmdEnAtt=db.commandes_phar.filter(c=>c.statut==='En attente');
+  const recTot=recC+recE+recP;
+  aff(`<div class="page on"><div class="ptitle"><span>Recouvrement global — ${MOIS[curMois]} ${curAnnee}</span>${barA('recouvrement')}</div>${barM('recouvrement')}
+  <div class="info-bar">Vue comptabilité — toutes les recettes par service + dépenses + solde net du centre.</div>
+  <div class="metrics">
+    <div class="metric" style="border-left:3px solid var(--B)"><div class="ml">Recette consultation</div><div class="mv mvb">${fmt(recC)}</div></div>
+    <div class="metric" style="border-left:3px solid var(--T)"><div class="ml">Recette labo</div><div class="mv mvt">${fmt(recE)}</div></div>
+    <div class="metric" style="border-left:3px solid var(--R)"><div class="ml">Recette pharmacie</div><div class="mv mva">${fmt(recP)}</div></div>
+    <div class="metric" style="border-left:3px solid var(--P)"><div class="ml">Subventions</div><div class="mv mvp">${fmt(subM)}</div></div>
+  </div>
+  <div class="metrics" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+    <div class="metric"><div class="ml">Total recettes</div><div class="mv mvg">${fmt(recTot+subM)}</div></div>
+    <div class="metric"><div class="ml">Total dépenses</div><div class="mv mvr">${fmt(depM)}</div></div>
+    <div class="metric"><div class="ml">Solde net disponible</div><div class="mv ${recTot+subM-depM>=0?'mvg':'mvr'}">${fmt(recTot+subM-depM)}</div></div>
+  </div>
+  ${cmdEnAtt.length?`<div class="warn-bar">⚠ ${cmdEnAtt.length} commande(s) pharmacie en attente d'approbation et paiement.</div>`:''}
+  <div class="card"><div class="ctitle">Commandes en attente d'approbation</div><div class="tw"><table><thead><tr><th>Date</th><th>Catégorie</th><th>Articles</th><th class="tr">Montant</th><th>Urgence</th><th>Action</th></tr></thead>
+  <tbody>${cmdEnAtt.map(c=>`<tr><td>${c.date}</td><td>${c.cat}</td><td style="font-size:10px;max-width:160px">${c.articles}</td><td class="tr">${fmt(c.mont||0)}</td><td><span class="badge ${c.urgence==='Urgente'?'br2':'bb'}">${c.urgence}</span></td>
+  <td style="display:flex;gap:3px"><button class="btn btng" style="font-size:10px;padding:2px 6px" onclick="approuverCmd('${c.id}')">Approuver</button><button class="btn btnr" style="font-size:10px;padding:2px 6px" onclick="rejeterCmd('${c.id}')">Rejeter</button></td></tr>`).join('')||'<tr><td colspan="6" class="muted" style="text-align:center;padding:14px">Aucune commande en attente</td></tr>'}</tbody></table></div></div></div>`);
+}
+async function approuverCmd(id){
+  const db=await getDB();const c=db.commandes_phar.find(x=>x.id===id);
+  if(c){c.statut='Approuvée';c.approuvePar=SESSION.label;c.dateApprob=auj();sf('commandes_phar',db.commandes_phar);await logAudit('Commande approuvée',c.id);aller('recouvrement');}
+}
+async function rejeterCmd(id){
+  const raison=prompt('Raison du rejet :');
+  const db=await getDB();const c=db.commandes_phar.find(x=>x.id===id);
+  if(c){c.statut='Rejetée';c.raisonRejet=raison||'—';sf('commandes_phar',db.commandes_phar);await logAudit('Commande rejetée',c.id);aller('recouvrement');}
+}
+async function fact_consultation(){
+  const db=await getDB();
+  const facs=db.facturation.consultations.filter(f=>f.mois===curMois&&f.annee===curAnnee);
+  const tot=facs.reduce((a,f)=>a+(f.montant||0),0);
+  aff(`<div class="page on"><div class="ptitle"><span>Facturation consultations — ${MOIS[curMois]} ${curAnnee}</span>${barA('fact_consultation')}</div>${barM('fact_consultation')}
+  <div class="metrics" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+    <div class="metric"><div class="ml">Nombre de consultations facturées</div><div class="mv mvb">${facs.length}</div></div>
+    <div class="metric"><div class="ml">Recette consultation</div><div class="mv mvg">${fmt(tot)}</div></div>
+  </div>
+  <div class="card"><div class="ctitle">Détail facturation consultations</div><div class="tw"><table><thead><tr><th>Date</th><th>Code Pat.</th><th>Patient</th><th class="tr">Montant GNF</th><th>Statut</th><th>Action</th></tr></thead>
+  <tbody>${facs.map(f=>`<tr><td>${f.date}</td><td><code>${f.patId||'—'}</code></td><td>${f.nomPatient}</td><td class="tr">${fmt(f.montant)}</td><td><span class="badge ${f.statut==='Payée'?'bg2':'ba'}">${f.statut}</span></td><td><button class="btn btng" style="font-size:10px;padding:2px 6px" onclick="payerFacture('consultations','${f.id}')">Payée</button></td></tr>`).join('')||'<tr><td colspan="6" class="muted" style="text-align:center;padding:14px">Aucune facture ce mois</td></tr>'}</tbody>
+  <tfoot><tr class="totrow"><td colspan="3"><strong>Total</strong></td><td class="tr"><strong>${fmt(tot)}</strong></td><td colspan="2"></td></tr></tfoot></table></div></div></div>`);
+}
+async function fact_examens(){
+  const db=await getDB();
+  const facs=db.facturation.examens.filter(f=>f.mois===curMois&&f.annee===curAnnee);
+  const tot=facs.reduce((a,f)=>a+(f.montant||0),0);
+  aff(`<div class="page on"><div class="ptitle"><span>Facturation examens — ${MOIS[curMois]} ${curAnnee}</span>${barA('fact_examens')}</div>${barM('fact_examens')}
+  <div class="metrics" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+    <div class="metric"><div class="ml">Examens facturés</div><div class="mv mvt">${facs.length}</div></div>
+    <div class="metric"><div class="ml">Recette labo</div><div class="mv mvg">${fmt(tot)}</div></div>
+  </div>
+  <div class="card"><div class="tw"><table><thead><tr><th>Date</th><th>Code Pat.</th><th>Patient</th><th class="tr">Montant GNF</th><th>Statut</th><th>Action</th></tr></thead>
+  <tbody>${facs.map(f=>`<tr><td>${f.date}</td><td><code>${f.patId||'—'}</code></td><td>${f.nomPatient}</td><td class="tr">${fmt(f.montant)}</td><td><span class="badge ${f.statut==='Payée'?'bg2':'ba'}">${f.statut}</span></td><td><button class="btn btng" style="font-size:10px;padding:2px 6px" onclick="payerFacture('examens','${f.id}')">Payée</button></td></tr>`).join('')||'<tr><td colspan="6" class="muted" style="text-align:center;padding:14px">Aucun</td></tr>'}</tbody>
+  <tfoot><tr class="totrow"><td colspan="3"><strong>Total</strong></td><td class="tr"><strong>${fmt(tot)}</strong></td><td colspan="2"></td></tr></tfoot></table></div></div></div>`);
+}
+async function fact_pharmacie(){
+  const db=await getDB();
+  const facs=db.facturation.pharmacie.filter(f=>f.mois===curMois&&f.annee===curAnnee);
+  const tot=facs.reduce((a,f)=>a+(f.montant||0),0);
+  aff(`<div class="page on"><div class="ptitle"><span>Facturation pharmacie — ${MOIS[curMois]} ${curAnnee}</span>${barA('fact_pharmacie')}</div>${barM('fact_pharmacie')}
+  <div class="metrics" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+    <div class="metric"><div class="ml">Dispensations facturées</div><div class="mv mva">${facs.length}</div></div>
+    <div class="metric"><div class="ml">Recette pharmacie</div><div class="mv mvg">${fmt(tot)}</div></div>
+  </div>
+  <div class="card"><div class="tw"><table><thead><tr><th>Date</th><th>Code Pat.</th><th>Patient</th><th>Médicament</th><th>Qté</th><th class="tr">Montant GNF</th></tr></thead>
+  <tbody>${facs.map(f=>`<tr><td>${f.date}</td><td><code>${f.patId||'—'}</code></td><td>${f.nomPatient}</td><td>${f.medicament||'—'}</td><td>${f.qte||1}</td><td class="tr">${fmt(f.montant)}</td></tr>`).join('')||'<tr><td colspan="6" class="muted" style="text-align:center;padding:14px">Aucune dispensation</td></tr>'}</tbody>
+  <tfoot><tr class="totrow"><td colspan="5"><strong>Total</strong></td><td class="tr"><strong>${fmt(tot)}</strong></td></tr></tfoot></table></div></div></div>`);
+}
+async function payerFacture(type,id){
+  const db=await getDB();const f=db.facturation[type].find(x=>x.id===id);
+  if(f){f.statut='Payée';sf('facturation',db.facturation);aller('fact_'+type==='consultations'?'consultation':type==='examens'?'examens':'pharmacie');}
+}
+
+// ═══ SUBVENTIONS ══════════════════════════════════════════════
+async function subventions(){
+  const db=await getDB();
+  const isComp=isRole('comptabilite','directeur');
+  const form=isComp?`<div class="card"><div class="ctitle">Enregistrer une subvention</div>
+  <div class="g3">
+    <div class="fg"><label>Date de réception</label><input type="date" id="sub-date" value="${auj()}"></div>
+    <div class="fg"><label>Source / Bailleur</label><input id="sub-source" placeholder="ex: OMS, UNICEF, État guinéen..."></div>
+    <div class="fg"><label>Montant (GNF)</label><input type="number" id="sub-mont" placeholder="0" min="0"></div>
+  </div>
+  <div class="g2">
+    <div class="fg"><label>Objet / Affectation</label><input id="sub-objet" placeholder="Finalité de la subvention"></div>
+    <div class="fg"><label>N° Référence / Accord</label><input id="sub-ref" placeholder="N° document officiel"></div>
+  </div>
+  <div class="fg"><label>Description détaillée</label><textarea id="sub-desc" placeholder="Conditions d'utilisation, restrictions, rapportage requis..."></textarea></div>
+  <div class="fg"><label>Statut d'utilisation</label><select id="sub-statut"><option>Reçue — non utilisée</option><option>Partiellement utilisée</option><option>Entièrement utilisée</option></select></div>
+  <div class="br"><button class="btn btnp" onclick="sauverSub()">Enregistrer</button></div></div>`:'<div class="info-bar">Seule la comptabilité et le directeur peuvent enregistrer les subventions.</div>';
+
+  const totalSub=db.subventions.reduce((a,s)=>a+(s.montant||0),0);
+  const subParSource={};db.subventions.forEach(s=>{subParSource[s.source]=(subParSource[s.source]||0)+(s.montant||0);});
+
+  aff(`<div class="page on"><div class="ptitle">Suivi des subventions</div>
+  ${form}
+  <div class="two">
+    <div class="card"><div class="ctitle">Récapitulatif par bailleur</div>
+      ${Object.keys(subParSource).length?Object.entries(subParSource).map(([k,v])=>`<div class="row-s"><span>${k}</span><strong style="color:var(--P)">${fmt(v)}</strong></div>`).join('')+'<div class="row-s" style="border-top:2px solid var(--BDC);margin-top:6px"><strong>Total</strong><strong style="color:var(--P);font-size:15px">${fmt(totalSub)}</strong></div>':`<p class="muted" style="padding:10px">Aucune subvention enregistrée</p>`}
+    </div>
+    <div class="card"><div class="ctitle">Suivi annuel ${curAnnee}</div>
+      ${MOIS.map((m,i)=>{const t=db.subventions.filter(s=>s.mois===i&&s.annee===curAnnee).reduce((a,s)=>a+(s.montant||0),0);return t>0?`<div class="row-s"><span>${m}</span><strong style="color:var(--P)">${fmt(t)}</strong></div>`:''}).join('')||'<p class="muted" style="padding:10px">Aucune subvention cette année</p>'}
+    </div>
+  </div>
+  <div class="card"><div class="ctitle">Registre des subventions</div><div class="tw"><table><thead><tr><th>Date</th><th>Source</th><th>Objet</th><th>N° Réf.</th><th class="tr">Montant GNF</th><th>Statut utilisation</th></tr></thead>
+  <tbody>${db.subventions.map(s=>`<tr><td>${s.date}</td><td><strong>${s.source}</strong></td><td>${s.objet||'—'}</td><td><code>${s.ref||'—'}</code></td><td class="tr"><strong style="color:var(--P)">${fmt(s.montant)}</strong></td><td><span class="badge ${s.statut==='Entièrement utilisée'?'bg2':s.statut==='Partiellement utilisée'?'ba':'bb'}">${s.statut}</span></td></tr>`).join('')||'<tr><td colspan="6" class="muted" style="text-align:center;padding:14px">Aucune subvention enregistrée</td></tr>'}</tbody></table></div></div></div>`);
+}
+async function sauverSub(){
+  const db=await getDB();
+  const source=document.getElementById('sub-source')?.value?.trim();
+  const mont=parseFloat(document.getElementById('sub-mont')?.value)||0;
+  if(!source||!mont){alert('Source et montant obligatoires');return;}
+  const dateVal=document.getElementById('sub-date')?.value||auj();
+  const d=new Date(dateVal);
+  db.subventions.push({id:'SUB-'+Date.now(),date:dateVal,mois:d.getMonth(),annee:d.getFullYear(),source,objet:document.getElementById('sub-objet')?.value||'',ref:document.getElementById('sub-ref')?.value||'',montant:mont,desc:document.getElementById('sub-desc')?.value||'',statut:document.getElementById('sub-statut')?.value||'Reçue — non utilisée',enregistrePar:SESSION.label});
+  await sf('subventions',db.subventions);await logAudit('Subvention enregistrée',source+' — '+fmt(mont));
+  aller('subventions');
+}
+
+// ═══ DÉPENSES ════════════════════════════════════════════════
+function depenses(){pageDep();}
+function depenses_dir(){pageDep();}
+async function pageDep(){
+  const db=await getDB();
+  const ro=SESSION.role==='directeur';
+  const deps=db.depenses.filter(d=>d.mois===curMois&&d.annee===curAnnee);
+  const tot=deps.reduce((a,d)=>a+(d.montant||0),0);
+  const form=ro?roLect():`<div class="card"><div class="ctitle">Enregistrer une dépense</div>
+  <div class="g3">
+    <div class="fg"><label>Catégorie</label><select id="d-cat"><option>Médicaments & fournitures</option><option>Salaires & primes</option><option>Loyer & charges</option><option>Équipements</option><option>Entretien</option><option>Vaccins & MILDA</option><option>Communication</option><option>Formation</option><option>Autre</option></select></div>
+    <div class="fg"><label>Date</label><input type="date" id="d-date" value="${auj()}"></div>
+    <div class="fg"><label>Désignation</label><input id="d-des" placeholder="Description"></div>
+  </div>
+  <div class="g2">
+    <div class="fg"><label>Montant (GNF)</label><input type="number" id="d-mont" placeholder="0" min="0"></div>
+    <div class="fg"><label>Bénéficiaire / Fournisseur</label><input id="d-benef" placeholder="Nom"></div>
+  </div>
+  <div class="br"><button class="btn btnp" onclick="sauverDep()">Enregistrer</button></div></div>`;
+  aff(`<div class="page on"><div class="ptitle"><span>Dépenses — ${MOIS[curMois]} ${curAnnee}</span>${barA('depenses')}</div>${barM('depenses')}
+  <div class="metrics" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+    <div class="metric"><div class="ml">Total dépenses ce mois</div><div class="mv mvr">${fmt(tot)}</div></div>
+    <div class="metric"><div class="ml">Nombre de dépenses</div><div class="mv mvb">${deps.length}</div></div>
+  </div>
+  ${form}
+  <div class="card"><div class="ctitle">Dépenses du mois</div><div class="tw"><table><thead><tr><th>Date</th><th>Catégorie</th><th>Désignation</th><th>Bénéficiaire</th><th class="tr">Montant GNF</th></tr></thead>
+  <tbody>${deps.map(d=>`<tr><td>${d.date}</td><td><span class="badge bn">${d.cat}</span></td><td>${d.des}</td><td>${d.benef||'—'}</td><td class="tr"><strong>${fmt(d.montant)}</strong></td></tr>`).join('')||'<tr><td colspan="5" class="muted" style="text-align:center;padding:14px">Aucune dépense</td></tr>'}</tbody>
+  <tfoot><tr class="totrow"><td colspan="4"><strong>Total</strong></td><td class="tr"><strong>${fmt(tot)}</strong></td></tr></tfoot></table></div></div></div>`);
+}
+async function sauverDep(){
+  const db=await getDB();
+  const des=document.getElementById('d-des')?.value?.trim();
+  const mont=parseFloat(document.getElementById('d-mont')?.value)||0;
+  if(!des||!mont){alert('Désignation et montant obligatoires');return;}
+  const dateVal=document.getElementById('d-date')?.value||auj();
+  const d=new Date(dateVal);
+  db.depenses.push({id:'DEP-'+Date.now(),date:dateVal,mois:d.getMonth(),annee:d.getFullYear(),cat:document.getElementById('d-cat')?.value||'Autre',des,montant:mont,benef:document.getElementById('d-benef')?.value||'',saisiPar:SESSION.label});
+  await sf('depenses',db.depenses);await logAudit('Dépense',des+' — '+fmt(mont));aller('depenses');
+}
+
+// ═══ FINANCES DIRECTEUR ═══════════════════════════════════════
+async function finances_dir(){
+  const db=await getDB();
+  const recC=db.facturation.consultations.filter(f=>f.mois===curMois&&f.annee===curAnnee).reduce((a,f)=>a+(f.montant||0),0);
+  const recE=db.facturation.examens.filter(f=>f.mois===curMois&&f.annee===curAnnee).reduce((a,f)=>a+(f.montant||0),0);
+  const recP=db.facturation.pharmacie.filter(f=>f.mois===curMois&&f.annee===curAnnee).reduce((a,f)=>a+(f.montant||0),0);
+  const depM=db.depenses.filter(d=>d.mois===curMois&&d.annee===curAnnee).reduce((a,d)=>a+(d.montant||0),0);
+  const subM=db.subventions.filter(s=>s.mois===curMois&&s.annee===curAnnee).reduce((a,s)=>a+(s.montant||0),0);
+  const recTot=recC+recE+recP+subM;
+  const solde=recTot-depM;
+  const rep=db.parametres.repartition;
+  aff(`<div class="page on"><div class="ptitle"><span>Situation financière — ${MOIS[curMois]} ${curAnnee}</span>${barA('finances_dir')}</div>${barM('finances_dir')}
+  <div class="metrics">
+    <div class="metric" style="border-left:3px solid var(--B)"><div class="ml">Recette consultation</div><div class="mv mvb">${fmt(recC)}</div></div>
+    <div class="metric" style="border-left:3px solid var(--T)"><div class="ml">Recette labo</div><div class="mv mvt">${fmt(recE)}</div></div>
+    <div class="metric" style="border-left:3px solid var(--A)"><div class="ml">Recette pharmacie</div><div class="mv mva">${fmt(recP)}</div></div>
+    <div class="metric" style="border-left:3px solid var(--P)"><div class="ml">Subventions</div><div class="mv mvp">${fmt(subM)}</div></div>
+  </div>
+  <div class="metrics" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+    <div class="metric"><div class="ml">Total recettes</div><div class="mv mvg">${fmt(recTot)}</div></div>
+    <div class="metric"><div class="ml">Total dépenses</div><div class="mv mvr">${fmt(depM)}</div></div>
+    <div class="metric"><div class="ml">Solde net</div><div class="mv ${solde>=0?'mvg':'mvr'}">${fmt(solde)}</div></div>
+  </div>
+  <div class="card">
+    <div class="ctitle">Caisse du centre — solde transparent</div>
+    <div class="ok-bar">Le solde net reste intégralement dans la caisse du centre. Seuls les salaires et primes saisis sont déduits.</div>
+    <div class="g2">
+      <div class="metric" style="border-left:3px solid var(--G)"><div class="ml">Masse salariale ce mois</div><div class="mv mvg">${fmt(db.salaires.filter(s=>s.mois===curMois&&s.annee===curAnnee).reduce((a,s)=>a+(s.salaire||0)+(s.prime||0)+(s.primeVac||0),0))}</div></div>
+      <div class="metric" style="border-left:3px solid var(--B)"><div class="ml">Caisse disponible nette</div><div class="mv mvb">${fmt(solde)}</div></div>
+    </div>
+  </div></div></div>`);
+}
+
+// ═══ SALAIRES & PRIMES ════════════════════════════════════════
+async function salaires(){
+  const db=await getDB();
+  const rep=db.parametres.repartition;
+  const form='';
+
+  const pers=db.personnel;
+  const fichesPay=db.salaires.filter(s=>s.mois===curMois&&s.annee===curAnnee);
+  aff(`<div class="page on"><div class="ptitle"><span>Salaires & primes — ${MOIS[curMois]} ${curAnnee}</span>${barA('salaires')}</div>${barM('salaires')}
+  ${form}
+  <div class="card"><div class="ctitle">Saisie des salaires et primes du mois</div>
+  <div class="info-bar">Médecins internes : salaire fixe + prime mensuelle + prime vaccination. Stagiaires : prime uniquement.</div>
+  <div class="tw"><table><thead><tr><th>Nom</th><th>Catégorie</th><th>Salaire fixe (GNF)</th><th>Prime mensuelle (GNF)</th><th>Prime vaccination (GNF)</th><th class="tr">Total GNF</th><th>Action</th></tr></thead>
+  <tbody>${pers.map((p,i)=>{
+    const fiche=fichesPay.find(f=>f.persId===p.id)||{salaire:p.salaire||0,prime:p.prime||0,primeVac:p.primeVac||0};
+    const isStag=p.categorie==='Stagiaire';
+    const tot=(isStag?0:fiche.salaire)+(fiche.prime||0)+(fiche.primeVac||0);
+    return`<tr><td>${p.nom}</td><td><span class="badge bb">${p.categorie}</span></td>
+    <td><input type="number" id="sal-${i}" value="${isStag?0:fiche.salaire||0}" min="0" ${isStag?'readonly style="background:var(--BL)"':''} style="width:100px;padding:4px 6px;font-size:11px;border:1px solid var(--BDC);border-radius:5px"></td>
+    <td><input type="number" id="prime-${i}" value="${fiche.prime||0}" min="0" style="width:100px;padding:4px 6px;font-size:11px;border:1px solid var(--BDC);border-radius:5px"></td>
+    <td><input type="number" id="pvac-${i}" value="${fiche.primeVac||0}" min="0" style="width:100px;padding:4px 6px;font-size:11px;border:1px solid var(--BDC);border-radius:5px"></td>
+    <td class="tr"><strong>${fmt(tot)}</strong></td>
+    <td><button class="btn btng" style="font-size:10px;padding:2px 6px" onclick="sauverFicheSal(${i},'${p.id}',${isStag})">Enr.</button></td></tr>`;
+  }).join('')||'<tr><td colspan="7" class="muted" style="text-align:center;padding:14px">Aucun personnel — ajoutez du personnel d\'abord</td></tr>'}</tbody></table></div></div>
+  <div class="card"><div class="ctitle">Récapitulatif salaires — ${MOIS[curMois]} ${curAnnee}</div>
+  <div class="tw"><table><thead><tr><th>Personnel</th><th>Catégorie</th><th>Salaire</th><th>Prime</th><th>Prime Vac.</th><th class="tr">Total</th></tr></thead>
+  <tbody>${fichesPay.map(f=>{const p=pers.find(x=>x.id===f.persId);return`<tr><td>${p?p.nom:'—'}</td><td><span class="badge bb">${p?p.categorie:'—'}</span></td><td>${fmt(f.salaire||0)}</td><td>${fmt(f.prime||0)}</td><td>${fmt(f.primeVac||0)}</td><td class="tr"><strong>${fmt((f.salaire||0)+(f.prime||0)+(f.primeVac||0))}</strong></td></tr>`;}).join('')||'<tr><td colspan="6" class="muted" style="text-align:center;padding:14px">Aucune fiche ce mois</td></tr>'}
+  </tbody><tfoot><tr class="totrow"><td colspan="5"><strong>Total masse salariale</strong></td><td class="tr"><strong>${fmt(fichesPay.reduce((a,f)=>a+(f.salaire||0)+(f.prime||0)+(f.primeVac||0),0))}</strong></td></tr></tfoot></table></div></div></div>`);
+}
+async function sauverFicheSal(idx,persId,isStag){
+  const db=await getDB();
+  const salaire=isStag?0:parseFloat(document.getElementById('sal-'+idx)?.value)||0;
+  const prime=parseFloat(document.getElementById('prime-'+idx)?.value)||0;
+  const primeVac=parseFloat(document.getElementById('pvac-'+idx)?.value)||0;
+  const existing=db.salaires.findIndex(f=>f.persId===persId&&f.mois===curMois&&f.annee===curAnnee);
+  const fiche={persId,mois:curMois,annee:curAnnee,salaire,prime,primeVac,saisiPar:SESSION.label,date:auj()};
+  if(existing>=0)db.salaires[existing]=fiche;else db.salaires.push(fiche);
+  await sf('salaires',db.salaires);await logAudit('Fiche salaire',persId+' '+MOIS[curMois]);
+}
+
+
+// ═══ PERSONNEL ════════════════════════════════════════════════
+async function personnel(){
+  const db=await getDB();
+  aff(`<div class="page on"><div class="ptitle">Gestion du personnel <span class="badge bb">${db.personnel.length} agents</span></div>
+  <div class="card"><div class="ctitle">Ajouter un agent</div>
+  <div class="g3">
+    <div class="fg"><label>Nom complet</label><input id="per-nom" placeholder="Prénom Nom"></div>
+    <div class="fg"><label>Catégorie</label><select id="per-cat"><option>Médecin interne</option><option>Stagiaire médecin</option><option>Infirmier(e)</option><option>Laborantin</option><option>Pharmacien(ne)</option><option>Agent d'accueil</option><option>Comptable</option><option>Personnel administratif</option><option>Agent d'entretien</option></select></div>
+    <div class="fg"><label>Téléphone</label><input id="per-tel" placeholder="+224 6XX XXX XXX"></div>
+  </div>
+  <div class="g3">
+    <div class="fg"><label>Date entrée</label><input type="date" id="per-entree" value="${auj()}"></div>
+    <div class="fg"><label>Salaire de base (GNF)</label><input type="number" id="per-sal" placeholder="0" min="0"></div>
+    <div class="fg"><label>Prime de base (GNF)</label><input type="number" id="per-prime" placeholder="0" min="0"></div>
+  </div>
+  <div class="br"><button class="btn btnp" onclick="sauverPersonnel()">Enregistrer</button></div></div>
+  <div class="card"><div class="ctitle">Liste du personnel</div><div class="tw"><table><thead><tr><th>Nom</th><th>Catégorie</th><th>Téléphone</th><th>Date entrée</th><th>Salaire base</th><th>Prime base</th></tr></thead>
+  <tbody>${db.personnel.map(p=>`<tr><td><strong>${p.nom}</strong></td><td><span class="badge bb">${p.categorie}</span></td><td>${p.tel||'—'}</td><td>${p.entree||'—'}</td><td>${fmt(p.salaire||0)}</td><td>${fmt(p.prime||0)}</td></tr>`).join('')||'<tr><td colspan="6" class="muted" style="text-align:center;padding:14px">Aucun agent enregistré</td></tr>'}</tbody></table></div></div></div>`);
+}
+async function sauverPersonnel(){
+  const nom=document.getElementById('per-nom')?.value?.trim();
+  if(!nom){alert('Nom obligatoire');return;}
+  const db=await getDB();
+  db.personnel.push({id:'PER-'+Date.now(),nom,categorie:document.getElementById('per-cat')?.value||'',tel:document.getElementById('per-tel')?.value||'',entree:document.getElementById('per-entree')?.value||auj(),salaire:parseFloat(document.getElementById('per-sal')?.value)||0,prime:parseFloat(document.getElementById('per-prime')?.value)||0,primeVac:0});
+  await sf('personnel',db.personnel);await logAudit('Personnel ajouté',nom);aller('personnel');
+}
+
+// ═══ RAPPORT MENSUEL ══════════════════════════════════════════
+async function rapport(){
+  const db=await getDB();
+  const cons=db.consultations.filter(c=>c.mois===curMois&&c.annee===curAnnee);
+  const exs=db.examens.filter(e=>e.mois===curMois&&e.annee===curAnnee);
+  const vacs=db.vaccination.filter(v=>v.mois===curMois&&v.annee===curAnnee);
+  const pfs=db.planif_fam.filter(p=>p.mois===curMois&&p.annee===curAnnee);
+  const cpns=db.cpn.filter(c=>c.mois===curMois&&c.annee===curAnnee);
+  const recTot=(db.facturation.consultations.filter(f=>f.mois===curMois&&f.annee===curAnnee).reduce((a,f)=>a+f.montant,0))+(db.facturation.examens.filter(f=>f.mois===curMois&&f.annee===curAnnee).reduce((a,f)=>a+f.montant,0))+(db.facturation.pharmacie.filter(f=>f.mois===curMois&&f.annee===curAnnee).reduce((a,f)=>a+f.montant,0));
+  const depTot=db.depenses.filter(d=>d.mois===curMois&&d.annee===curAnnee).reduce((a,d)=>a+d.montant,0);
+  // Compter vaccins par type
+  const vacCounts={};VACCINS_ENF.forEach(v=>{vacCounts[v]=vacs.filter(x=>(x.vaccins||[]).includes(v)).length;});
+  const mildaDist=vacs.filter(v=>v.milda).length;
+  aff(`<div class="page on"><div class="ptitle"><span>Rapport mensuel — ${MOIS[curMois]} ${curAnnee}</span>${barA('rapport')}</div>${barM('rapport')}
+  <div class="metrics">
+    <div class="metric"><div class="ml">Consultations</div><div class="mv mvb">${cons.length}</div></div>
+    <div class="metric"><div class="ml">Examens labo</div><div class="mv mvt">${exs.length}</div></div>
+    <div class="metric"><div class="ml">Vaccinations</div><div class="mv mvg">${vacs.length}</div></div>
+    <div class="metric"><div class="ml">Bénéfice net</div><div class="mv ${recTot-depTot>=0?'mvg':'mvr'}">${fmt(recTot-depTot)}</div></div>
+  </div>
+  <div class="g3">
+    <div class="card"><div class="ctitle">Consultations par type</div>
+      ${['Consultation générale','Urgence','Suivi','Pédiatrie','Maternité','CPN','CPoN'].map(t=>{const n=cons.filter(c=>c.type===t).length;return n>0?`<div class="row-s"><span>${t}</span><strong>${n}</strong></div>`:''}).join('')||'<p class="muted" style="padding:8px">Aucune</p>'}
+    </div>
+    <div class="card"><div class="ctitle">Vaccinations PEV</div>
+      ${Object.entries(vacCounts).filter(([k,v])=>v>0).map(([k,v])=>`<div class="row-s"><span style="font-size:11px">${k}</span><strong>${v}</strong></div>`).join('')||'<p class="muted" style="padding:8px">Aucune</p>'}
+      <div class="row-s" style="border-top:2px solid var(--BDC);margin-top:4px"><strong>MILDA distribuées</strong><strong>${mildaDist}</strong></div>
+    </div>
+    <div class="card"><div class="ctitle">PF & CPoN</div>
+      <div class="row-s"><span>Planification familiale</span><strong>${pfs.length}</strong></div>
+      ${['COC (pilule combinée)','Injection DMPA-IM','Implant','DIU cuivre','Préservatif masculin'].map(m=>{const n=pfs.filter(p=>p.methode===m).length;return n>0?`<div class="row-s" style="padding-left:8px"><span style="font-size:11px;color:var(--MUTED)">${m}</span><strong>${n}</strong></div>`:''}).join('')}
+      <div class="row-s" style="margin-top:8px"><span>Consultations postnatales</span><strong>${cpns.length}</strong></div>
+      <div class="row-s" style="padding-left:8px"><span style="font-size:11px;color:var(--MUTED)">CPoN 1</span><strong>${cpns.filter(c=>c.numVisite==='CPoN 1').length}</strong></div>
+      <div class="row-s" style="padding-left:8px"><span style="font-size:11px;color:var(--MUTED)">CPoN 2</span><strong>${cpns.filter(c=>c.numVisite==='CPoN 2').length}</strong></div>
+      <div class="row-s" style="padding-left:8px"><span style="font-size:11px;color:var(--MUTED)">CPoN 3</span><strong>${cpns.filter(c=>c.numVisite==='CPoN 3').length}</strong></div>
+    </div>
+  </div></div>`);
+}
+
+// ═══ AUDIT ════════════════════════════════════════════════════
+async function audit(){
+  aff('<div class="page on"><div class="ptitle">Journal d'audit</div><div class="card"><p class="muted" style="padding:14px">Chargement...</p></div></div>');
+  const res=await api('GET','/audit');
+  const log=res.ok?res.data:[];
+  const rows=log.length?log.map(l=>'<div style="display:flex;align-items:center;gap:7px;padding:7px 0;border-bottom:1px solid var(--BL);font-size:11px;flex-wrap:wrap"><span class="badge '+(l.action.includes('Connexion')?'bg2':l.action.includes('Déco')?'br2':'bb')+'">'+l.action+'</span><span style="flex:1">'+l.detail+'</span><span class="muted">'+l.user+'</span><span class="muted" style="font-size:10px;margin-left:6px">'+l.ts+'</span></div>').join(''):'<p class="muted" style="padding:14px">Aucune action.</p>';
+  aff('<div class="page on"><div class="ptitle">Journal d'audit</div><div class="card">'+rows+'</div></div>');
+}
+
+// ═══ CODES D'ACCÈS ════════════════════════════════════════════
+async function codes(){
+  if(SESSION.role!=='directeur'&&SESSION.role!=='concepteur'){aff('<div class="page on"><div class="warn-bar">Accès refusé.</div></div>');return;}
+  const res=await api('GET','/codes');
+  let savedCodes=res.ok?res.data:{};
+  // Le directeur ne voit PAS le code concepteur
+  const users=[
+    {id:'directeur',l:'Directeur',def:'DIR2026'},
+    {id:'accueil',l:'Accueil',def:'ACC001'},
+    {id:'medecin',l:'Médecin',def:'MED001'},
+    {id:'infirmier',l:'Infirmier(e)',def:'INF001'},
+    {id:'labo',l:'Laborantin',def:'LAB001'},
+    {id:'pharmacien',l:'Pharmacien(ne)',def:'PHA001'},
+    {id:'comptabilite',l:'Comptabilité',def:'CPT001'}
+  ];
+  // Charger comptes extra (laborantins additionnels)
+  let extras=[];
+  try{const e=localStorage.getItem('csb2_extra_comptes');if(e)extras=JSON.parse(e);}catch(e){}
+
+  aff(`<div class="page on"><div class="ptitle">Gestion des codes d'accès</div>
+  <div class="info-bar">Le Directeur peut modifier tous les mots de passe — sauf celui de l'Administrateur système (invisible).</div>
+  <div class="card"><div class="ctitle">Modifier les mots de passe</div>
+  ${users.map(u=>`<div class="g3" style="margin-bottom:8px;align-items:flex-end">
+    <div class="fg" style="margin-bottom:0"><label>${u.l}</label><input type="text" value="${savedCodes[u.id]||u.def}" readonly style="background:var(--BL)"></div>
+    <div class="fg" style="margin-bottom:0"><label>Nouveau mot de passe</label><input type="password" id="new-${u.id}" placeholder="Laisser vide = pas de changement"></div>
+    <button class="btn btnp" style="height:32px" onclick="changerCode('${u.id}')">Mettre à jour</button>
+  </div>`).join('')}
+  </div>
+  <div class="card"><div class="ctitle">Ajouter un laborantin supplémentaire</div>
+  <div class="g3">
+    <div class="fg"><label>Identifiant (unique)</label><input id="ex-id" placeholder="ex: labo2"></div>
+    <div class="fg"><label>Nom affiché</label><input id="ex-nom" placeholder="ex: Laborantin 2"></div>
+    <div class="fg"><label>Mot de passe</label><input type="password" id="ex-mdp" placeholder="Mot de passe"></div>
+  </div>
+  <div class="br"><button class="btn btnp" onclick="ajouterLaborantin()">Ajouter</button></div>
+  ${extras.length?`<div class="ctitle" style="margin-top:14px">Comptes supplémentaires</div><div class="tw"><table><thead><tr><th>Identifiant</th><th>Nom</th><th>Rôle</th></tr></thead><tbody>${extras.map(e=>`<tr><td><code>${e.id}</code></td><td>${e.label}</td><td>${e.role}</td></tr>`).join('')}</tbody></table></div>`:''}
+  </div></div>`);
+}
+function changerCode(userId){
+  const newPwd=document.getElementById('new-'+userId)?.value?.trim();
+  if(!newPwd){alert('Entrez un nouveau mot de passe');return;}
+  if(newPwd.length<4){alert('Minimum 4 caractères');return;}
+  let codes={};try{const c=localStorage.getItem('csb2_codes');if(c)codes=JSON.parse(c);}catch(e){}
+  codes[userId]=newPwd;
+  if(COMPTES[userId])COMPTES[userId].mdp=newPwd;
+  try{localStorage.setItem('csb2_codes',JSON.stringify(codes));}catch(e){}
+  await logAudit('Code modifié','Utilisateur: '+userId);
+  alert('Mot de passe mis à jour : '+userId);codes();
+}
+async function ajouterLaborantin(){
+  const id=document.getElementById('ex-id')?.value?.trim()?.toLowerCase();
+  const nom=document.getElementById('ex-nom')?.value?.trim();
+  const mdp=document.getElementById('ex-mdp')?.value?.trim();
+  if(!id||!nom||!mdp){alert('Tous les champs sont obligatoires');return;}
+  const res=await api('POST','/extra_comptes',{id,label:nom,mdp});
+  if(!res.ok){alert('Erreur: '+(res.message||'inconnue'));return;}
+  const sel=document.getElementById('lid');
+  if(sel&&!sel.querySelector('option[value="'+id+'"]')){
+    const opt=document.createElement('option');opt.value=id;opt.textContent=nom+' (Laborantin)';sel.appendChild(opt);
+  }
+  alert('Laborantin ajoute : '+nom);
+  await codes();
+}
+
+// ═══ ADMIN SYSTÈME (Concepteur — invisible pour directeur) ════
+async function activerLicence(){
+  const annee=parseInt(document.getElementById('lic-annee')?.value)||new Date().getFullYear();
+  const adminCode=prompt('Code administrateur :');
+  if(!adminCode)return;
+  const res=await api('POST','/licence',{adminCode,action:'activer',anneeValidite:annee});
+  if(!res.ok){alert('Erreur: '+(res.message||'Code incorrect'));return;}
+  alert('Licence activee pour '+annee+'.');
+  admin();
+}
+async function desactiverLicence(){
+  const raison=document.getElementById('lic-raison')?.value||'Desactivation manuelle';
+  if(!confirm('ATTENTION — Bloquer le systeme ?'))return;
+  const adminCode=prompt('Code administrateur :');
+  if(!adminCode)return;
+  const res=await api('POST','/licence',{adminCode,action:'desactiver',raison});
+  if(!res.ok){alert('Erreur: '+(res.message||'Code incorrect'));return;}
+  alert('Systeme bloque.');admin();
+}
+async function admin(){
+  if(SESSION.role!=='concepteur'){aff('<div class="page on"><div class="warn-bar">Accès réservé à l\'Administrateur système.</div></div>');return;}
+  const db=await getDB();
+  let savedCodes={};try{const c=localStorage.getItem('csb2_codes');if(c)savedCodes=JSON.parse(c);}catch(e){}
+  // Récupérer TOUS les codes y compris concepteur
+  const tousLesCodes={...savedCodes};
+  if(!tousLesCodes.concepteur)tousLesCodes.concepteur=COMPTES_BASE.concepteur.mdp;
+
+  aff(`<div class="page on"><div class="ptitle">Administration système <span class="badge bn">Administrateur</span></div>
+  <div class="info-bar">Accès Administrateur — audit complet, maintenance, récupération de codes.</div>
+  <div class="card" style="border:2px solid var(--R)">
+    <div class="ctitle">Controle de la licence annuelle</div>
+    <div id="lic-status-block" style="margin-bottom:10px"></div>
+    <div class="g3">
+      <div class="fg"><label>Actions</label>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <button class="btn btng" onclick="activerLicence()" style="flex:1">Activer</button>
+          <button class="btn btnr" onclick="desactiverLicence()" style="flex:1">Bloquer</button>
+        </div>
+      </div>
+      <div class="fg"><label>Annee de validite</label>
+        <select id="lic-annee">${[0,1,2].map(i=>`<option value="${new Date().getFullYear()+i}">${new Date().getFullYear()+i}</option>`).join('')}</select>
+      </div>
+      <div class="fg"><label>Raison (si blocage)</label>
+        <input id="lic-raison" placeholder="Raison...">
+      </div>
+    </div>
+    <div class="info-bar">Blocage automatique au 31/12 de l'annee selectionnee.</div>
+
+  </div>
+  <div class="card"><div class="ctitle">Tous les codes d'accès (CONFIDENTIEL — visible uniquement Administrateur)</div><div class="tw"><table><thead><tr><th>Identifiant</th><th>Mot de passe actuel</th><th>Rôle</th></tr></thead><tbody>
+    ${Object.entries(COMPTES).map(([id,c])=>`<tr><td><code>${id}</code></td><td><code>${tousLesCodes[id]||c.mdp||'—'}</code></td><td>${c.role}</td></tr>`).join('')}
+  </tbody></table></div>
+  <div class="br"><button class="btn btna" onclick="changerCodeConcepteur()">Changer le code Administrateur</button></div></div>
+  <div class="card"><div class="ctitle">État de la base</div>
+    <div class="row-s"><span>Patients</span><strong>${db.patients.length}</strong></div>
+    <div class="row-s"><span>Consultations</span><strong>${db.consultations.length}</strong></div>
+    <div class="row-s"><span>Examens</span><strong>${db.examens.length}</strong></div>
+    <div class="row-s"><span>Vaccinations</span><strong>${db.vaccination.length}</strong></div>
+    <div class="row-s"><span>Factures consultation</span><strong>${db.facturation.consultations.length}</strong></div>
+    <div class="row-s"><span>Factures labo</span><strong>${db.facturation.examens.length}</strong></div>
+    <div class="row-s"><span>Dispensations pharmacie</span><strong>${db.facturation.pharmacie.length}</strong></div>
+    <div class="row-s"><span>Subventions</span><strong>${db.subventions.length}</strong></div>
+    <div class="row-s"><span>Dépenses</span><strong>${db.depenses.length}</strong></div>
+    <div class="row-s"><span>Personnel</span><strong>${db.personnel.length}</strong></div>
+  </div>
+  <div class="card"><div class="ctitle">Maintenance</div>
+  <div class="br">
+    <button class="btn btng" onclick="exporterDB()">Exporter toutes les données (JSON)</button>
+    <button class="btn btnr" onclick="if(confirm('ATTENTION — Tout effacer ? Irréversible !'))reinitDB()">Réinitialiser la base</button>
+  </div></div></div>`);
+  setTimeout(afficherLicenceStatus, 10);
+}
+async function changerCodeConcepteur(){
+  const newPwd=prompt('Nouveau mot de passe Administrateur (min. 6 caractères) :');
+  if(!newPwd||newPwd.length<6){alert('Mot de passe trop court');return;}
+  let codes={};try{const c=localStorage.getItem('csb2_codes');if(c)codes=JSON.parse(c);}catch(e){}
+  codes.concepteur=newPwd;COMPTES.concepteur.mdp=newPwd;
+  try{localStorage.setItem('csb2_codes',JSON.stringify(codes));}catch(e){}
+  await logAudit('Code concepteur modifié','Administrateur système');
+  alert('Code Administrateur mis à jour.');admin();
+}
+async function exporterDB(){
+  window.open('/api/backup','_blank');
+  await logAudit('Export données','Backup téléchargé');
+}
+function reinitDB(){
+  alert('Réinitialisation non disponible en mode serveur. Contactez l'administrateur.');
+}
+</script>
+</body>
+</html>
