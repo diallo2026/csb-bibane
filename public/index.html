@@ -424,20 +424,24 @@ async function debloquerLicence(){
 }
 async function activerLicence(){
   const annee=parseInt(document.getElementById('lic-annee')?.value)||new Date().getFullYear();
-  const adminCode=prompt('Code Administrateur:');
-  if(!adminCode)return;
+  const adminCode=document.getElementById('lic-confirm-code')?.value?.trim();
+  if(!adminCode){alert('Entrez votre code administrateur avant de continuer.');document.getElementById('lic-confirm-code')?.focus();return;}
   const res=await api('POST','/licence',{adminCode,action:'activer',anneeValidite:annee});
-  if(!res.ok){alert('Erreur: '+(res.message||'Code incorrect'));return;}
-  alert('Licence activee pour '+annee+'.');admin();
+  if(!res.ok){alert('Code incorrect ou erreur: '+(res.message||''));document.getElementById('lic-confirm-code').value='';return;}
+  document.getElementById('lic-confirm-code').value='';
+  alert('Licence activee pour '+annee+'. Le systeme se bloquera automatiquement au 31/12/'+annee+'.');
+  admin();
 }
 async function desactiverLicence(){
+  const adminCode=document.getElementById('lic-confirm-code')?.value?.trim();
+  if(!adminCode){alert('Entrez votre code administrateur avant de continuer.');document.getElementById('lic-confirm-code')?.focus();return;}
   const raison=document.getElementById('lic-raison')?.value||'Desactivation manuelle';
-  if(!confirm('ATTENTION - Bloquer maintenant?'))return;
-  const adminCode=prompt('Code Administrateur:');
-  if(!adminCode)return;
+  if(!confirm('ATTENTION — Tous les utilisateurs seront bloques immediatement. Confirmer?'))return;
   const res=await api('POST','/licence',{adminCode,action:'desactiver',raison});
-  if(!res.ok){alert('Erreur: '+(res.message||'Code incorrect'));return;}
-  alert('Systeme bloque.');admin();
+  if(!res.ok){alert('Code incorrect ou erreur: '+(res.message||''));document.getElementById('lic-confirm-code').value='';return;}
+  document.getElementById('lic-confirm-code').value='';
+  alert('Systeme bloque avec succes. Pour reactiver, connectez-vous en tant qu\'administrateur.');
+  admin();
 }
 async function afficherLicenceStatus(){
   const el=document.getElementById('lic-status-block');
@@ -1809,18 +1813,26 @@ async function admin(){
   <div class="card" style="border:2px solid var(--R)">
     <div class="ctitle">Controle licence annuelle</div>
     <div id="lic-status-block" style="margin-bottom:10px"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px">
-      <div><label style="font-size:10px;font-weight:700;color:var(--MUTED);display:block;margin-bottom:4px">ANNEE</label>
-        <select id="lic-annee" style="width:100%;padding:6px;border:1px solid var(--BDC);border-radius:6px;font-size:12px">
-          <option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option>
-        </select></div>
-      <div><label style="font-size:10px;font-weight:700;color:var(--MUTED);display:block;margin-bottom:4px">RAISON BLOCAGE</label>
-        <input id="lic-raison" placeholder="Raison..." style="width:100%;padding:6px;border:1px solid var(--BDC);border-radius:6px;font-size:12px"></div>
-      <div style="display:flex;gap:6px;align-items:flex-end">
-        <button onclick="activerLicence()" class="btn btng" style="flex:1">Activer</button>
-        <button onclick="desactiverLicence()" class="btn btnr" style="flex:1">Bloquer</button>
+    <div class="g2">
+      <div class="fg"><label>Annee de validite</label>
+        <select id="lic-annee">
+          <option value="2026">2026</option>
+          <option value="2027">2027</option>
+          <option value="2028">2028</option>
+        </select>
+      </div>
+      <div class="fg"><label>Code Administrateur (requis)</label>
+        <input type="password" id="lic-confirm-code" placeholder="Entrez votre code DEV9999...">
       </div>
     </div>
+    <div class="fg"><label>Raison du blocage (si blocage)</label>
+      <input id="lic-raison" placeholder="Ex: Fin de contrat, maintenance...">
+    </div>
+    <div class="br">
+      <button onclick="activerLicence()" class="btn btng">✓ Activer la licence</button>
+      <button onclick="desactiverLicence()" class="btn btnr">✗ Bloquer le systeme</button>
+    </div>
+    <div class="info-bar" style="margin-top:8px">Blocage automatique au 31/12 de l'annee selectionnee. Le code administrateur est requis pour confirmer toute action.</div>
   </div>
   <div class="card" style="border:2px solid var(--R)">
     <div class="ctitle">Controle de la licence annuelle</div>
