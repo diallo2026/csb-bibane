@@ -150,7 +150,7 @@ code{background:var(--BL);padding:1px 6px;border-radius:4px;font-family:monospac
     <p style="color:#64748b;font-size:12px">Contactez l'Administrateur système pour renouveler la licence.</p>
     <div style="margin-top:20px;padding-top:16px;border-top:1px solid #eee">
       <label style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase">Code administrateur</label>
-      <input type="password" id="lic-admin-code" placeholder="Code administrateur" style="width:100%;padding:9px 12px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:13px;outline:none;margin-bottom:10px">
+      <input type="password" id="lic-admin-code" placeholder="••••••••" style="width:100%;padding:9px 12px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:13px;outline:none;margin-bottom:10px" autocomplete="off">
       <button onclick="debloquerLicence()" style="width:100%;padding:11px;background:#dc2626;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Activer / Renouveler la licence</button>
     </div>
   </div>
@@ -162,7 +162,11 @@ code{background:var(--BL);padding:1px 6px;border-radius:4px;font-family:monospac
     <h2 style="color:#991b1b;margin-bottom:10px">Systeme bloque</h2>
     <p style="color:#64748b;font-size:13px;margin-bottom:12px">Licence expiree pour <strong id="blocage-annee">—</strong></p>
     <p style="color:#dc2626;font-size:12px;padding:10px;background:#fee2e2;border-radius:8px;margin-bottom:16px" id="blocage-raison">—</p>
-    <input type="password" id="lic-admin-code" placeholder="Code administrateur" style="width:100%;padding:9px 12px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:13px;outline:none;margin-bottom:10px">
+    <div style="margin-bottom:10px">
+      <label style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:5px">Annee de reactivation</label>
+      <select id="lic-annee-deblocage" style="width:100%;padding:9px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:13px;margin-bottom:8px"><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option><option value="2031">2031</option><option value="2032">2032</option><option value="2033">2033</option><option value="2034">2034</option><option value="2035">2035</option></select>
+    </div>
+    <input type="password" id="lic-admin-code" placeholder="••••••••" style="width:100%;padding:9px 12px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:13px;outline:none;margin-bottom:10px" autocomplete="off">
     <button onclick="debloquerLicence()" style="width:100%;padding:11px;background:#dc2626;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Activer la licence</button>
   </div>
 </div>
@@ -380,27 +384,33 @@ window.addEventListener('DOMContentLoaded',()=>{
     try{
       const r=await fetch('/api/licence');
       const d=await r.json();
-      if(d&&d.valid===false){
+      // Bloquer SEULEMENT si explicitement desactive (active=false)
+      // Ne pas bloquer si la licence n'existe pas encore (premiere utilisation)
+      if(d&&d.valid===false&&d.data&&d.data.active===false){
         const lic=d.data||{};
         document.getElementById('blocage-annee').textContent=lic.anneeValidite||new Date().getFullYear();
-        document.getElementById('blocage-raison').textContent=lic.raisonBlocage||'Licence expiree.';
+        document.getElementById('blocage-raison').textContent=lic.raisonBlocage||'Systeme bloque par administrateur.';
         document.getElementById('blocage-page').style.display='flex';
         document.getElementById('login-page').style.display='none';
       }
-    }catch(e){}
+    }catch(e){
+      // Si serveur inaccessible, laisser la page login normalement
+      console.warn('Licence check failed:', e.message);
+    }
   },500);
 });
 
-// Verification toutes les 30 secondes — bloque tous les navigateurs instantanement
+// Verification toutes les 30 secondes
+// Bloque TOUS les navigateurs instantanement quand admin bloque manuellement
 setInterval(async()=>{
   if(!SESSION||SESSION.role==='concepteur')return;
   try{
     const r=await fetch('/api/licence');
     const d=await r.json();
-    if(d&&d.valid===false){
+    if(d&&d.valid===false&&d.data&&d.data.active===false){
       const lic=d.data||{};
       document.getElementById('blocage-annee').textContent=lic.anneeValidite||new Date().getFullYear();
-      document.getElementById('blocage-raison').textContent=lic.raisonBlocage||'Licence expiree.';
+      document.getElementById('blocage-raison').textContent=lic.raisonBlocage||'Systeme bloque.';
       document.getElementById('app-page').style.display='none';
       document.getElementById('login-page').style.display='none';
       document.getElementById('blocage-page').style.display='flex';
@@ -411,16 +421,17 @@ setInterval(async()=>{
 
 async function debloquerLicence(){
   const code=document.getElementById('lic-admin-code')?.value?.trim();
-  if(!code){alert('Entrez le code administrateur');return;}
-  const annee=new Date().getFullYear();
-  const res=await api('POST','/licence',{adminCode:code,action:'activer',anneeValidite:annee});
+  // Effacer IMMEDIATEMENT le code avant tout traitement
   document.getElementById('lic-admin-code').value='';
+  if(!code){alert('Entrez le code administrateur');return;}
+  const annee=parseInt(document.getElementById('lic-annee-deblocage')?.value)||new Date().getFullYear();
+  const res=await api('POST','/licence',{adminCode:code,action:'activer',anneeValidite:annee});
   if(res.ok){
     document.getElementById('blocage-page').style.display='none';
     document.getElementById('login-page').style.display='flex';
-    alert('Licence activee!');
+    alert('Licence activee jusqu\'au 31/12/'+annee+'!');
   }else{
-    alert('Code incorrect: '+(res.message||''));
+    alert('Code incorrect.');
   }
 }
 
@@ -1815,7 +1826,7 @@ async function admin(){
         <select id="lic-annee-select"><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option><option value="2031">2031</option><option value="2032">2032</option><option value="2033">2033</option><option value="2034">2034</option><option value="2035">2035</option></select>
       </div>
       <div class="fg"><label>Code Administrateur</label>
-        <input type="password" id="lic-confirm-code" placeholder="Votre code secret..." autocomplete="new-password">
+        <input type="password" id="lic-confirm-code" placeholder="••••••••" autocomplete="off" style="letter-spacing:3px">
       </div>
       <div class="fg"><label>Raison du blocage</label>
         <input id="lic-raison" placeholder="Ex: Fin de contrat...">
