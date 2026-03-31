@@ -159,8 +159,8 @@ code{background:var(--BL);padding:1px 6px;border-radius:4px;font-family:monospac
 <div id="blocage-page" style="display:none;min-height:100vh;align-items:center;justify-content:center;background:linear-gradient(135deg,#991b1b,#dc2626);position:fixed;top:0;left:0;width:100%;z-index:9999">
   <div style="background:#fff;border-radius:16px;padding:36px;max-width:480px;width:90%;text-align:center">
     <div style="font-size:40px;margin-bottom:12px">&#128274;</div>
-    <h2 style="color:#991b1b;margin-bottom:10px">Acces bloque</h2>
-    <p style="color:#64748b;font-size:13px;margin-bottom:12px">Licence expiree — annee <strong id="blocage-annee">—</strong></p>
+    <h2 style="color:#991b1b;margin-bottom:10px">Systeme bloque</h2>
+    <p style="color:#64748b;font-size:13px;margin-bottom:12px">Licence expiree pour <strong id="blocage-annee">—</strong></p>
     <p style="color:#dc2626;font-size:12px;padding:10px;background:#fee2e2;border-radius:8px;margin-bottom:16px" id="blocage-raison">—</p>
     <input type="password" id="lic-admin-code" placeholder="Code administrateur" style="width:100%;padding:9px 12px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:13px;outline:none;margin-bottom:10px">
     <button onclick="debloquerLicence()" style="width:100%;padding:11px;background:#dc2626;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Activer la licence</button>
@@ -281,20 +281,16 @@ let COMPTES={...COMPTES_BASE};
 
 // ═══ BASE DE DONNÉES ══════════════════════════════════════════
 // SERVEUR API
-let TOKEN=null;
-let DB_CACHE=null;
+let TOKEN=null,DB_CACHE=null;
 async function api(method,path,body){
   const opts={method,headers:{'Content-Type':'application/json'}};
-  if(TOKEN) opts.headers['X-Token']=TOKEN;
-  if(body!==undefined) opts.body=JSON.stringify(body);
-  try{
-    const r=await fetch('/api'+path,opts);
-    const data=await r.json();
-    return data;
-  }catch(e){return{ok:false,message:'Serveur inaccessible'};}
+  if(TOKEN)opts.headers['X-Token']=TOKEN;
+  if(body!==undefined)opts.body=JSON.stringify(body);
+  try{const r=await fetch('/api'+path,opts);return await r.json();}
+  catch(e){return{ok:false,message:'Serveur inaccessible'};}
 }
 async function getDB(){
-  if(DB_CACHE) return DB_CACHE;
+  if(DB_CACHE)return DB_CACHE;
   const res=await api('GET','/db');
   if(res.ok){DB_CACHE=res.data;return DB_CACHE;}
   return{patients:[],consultations:[],examens:[],rdv:[],pharmacie:{medicaments:[],milda:[],vaccins_stock:[]},commandes_phar:[],facturation:{consultations:[],examens:[],pharmacie:[]},depenses:[],subventions:[],personnel:[],salaires:[],vaccination:[],planif_fam:[],cpn:[],parametres:{repartition:{pctDir:0.50,pctSal:0.25,pctCharge:0.15,pctDon:0.10}}};
@@ -304,34 +300,17 @@ async function sf(field,data,sub){
   if(sub){if(!db[field])db[field]={};db[field][sub]=data;}
   else db[field]=data;
   DB_CACHE=db;
-  if(sub) await api('POST','/db/'+field+'/'+sub,{data});
+  if(sub)await api('POST','/db/'+field+'/'+sub,{data});
   else await api('POST','/db/'+field,{data});
 }
 function viderCache(){DB_CACHE=null;}
 
 async function logAudit(action,detail){
-  if(TOKEN) await api('POST','/audit',{action,detail});
+  if(TOKEN)await api('POST','/audit',{action,detail});
 }
 
 // ═══ AUTH ═════════════════════════════════════════════════════
-function chargerCodes(){
-  try{
-    const c=localStorage.getItem('csb2_codes');
-    if(c){
-      const codes=JSON.parse(c);
-      // Ne jamais exposer le code concepteur dans les codes standards
-      Object.keys(codes).forEach(id=>{
-        if(id!=='concepteur'&&COMPTES[id])COMPTES[id].mdp=codes[id];
-      });
-    }
-    // Charger aussi les comptes supplémentaires (laborantins ajoutés)
-    const extra=localStorage.getItem('csb2_extra_comptes');
-    if(extra){
-      const extras=JSON.parse(extra);
-      extras.forEach(c=>{COMPTES[c.id]={...c};});
-    }
-  }catch(e){}
-}
+function chargerCodes(){}
 
 
 // ==========================================
@@ -370,7 +349,7 @@ function showBlocagePage(){
   document.getElementById('blocage-annee').textContent=lic.anneeValidite||new Date().getFullYear();
 }
 
-async function debloquerLicence(){
+function debloquerLicence(){
   const code=document.getElementById('lic-admin-code')?.value?.trim();
   if(!code){alert('Entrez le code administrateur');return;}
   chargerCodes();
@@ -395,7 +374,7 @@ window.addEventListener('DOMContentLoaded',()=>{
 });
 
 
-// LICENCE
+// LICENCE SERVEUR
 window.addEventListener('DOMContentLoaded',()=>{
   setTimeout(async()=>{
     try{
@@ -411,90 +390,77 @@ window.addEventListener('DOMContentLoaded',()=>{
     }catch(e){}
   },500);
 });
+
+// Verification toutes les 30 secondes — bloque tous les navigateurs instantanement
+setInterval(async()=>{
+  if(!SESSION||SESSION.role==='concepteur')return;
+  try{
+    const r=await fetch('/api/licence');
+    const d=await r.json();
+    if(d&&d.valid===false){
+      const lic=d.data||{};
+      document.getElementById('blocage-annee').textContent=lic.anneeValidite||new Date().getFullYear();
+      document.getElementById('blocage-raison').textContent=lic.raisonBlocage||'Licence expiree.';
+      document.getElementById('app-page').style.display='none';
+      document.getElementById('login-page').style.display='none';
+      document.getElementById('blocage-page').style.display='flex';
+      TOKEN=null;SESSION=null;DB_CACHE=null;
+    }
+  }catch(e){}
+},30000);
+
 async function debloquerLicence(){
   const code=document.getElementById('lic-admin-code')?.value?.trim();
-  if(!code){alert('Entrez le code administrateur (DEV9999)');return;}
+  if(!code){alert('Entrez le code administrateur');return;}
   const annee=new Date().getFullYear();
-  try{
-    const r=await fetch('/api/licence',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({adminCode:code,action:'activer',anneeValidite:annee})
-    });
-    const res=await r.json();
-    if(res.ok){
-      document.getElementById('blocage-page').style.display='none';
-      document.getElementById('login-page').style.display='flex';
-      document.getElementById('lic-admin-code').value='';
-      alert('Licence activee pour '+annee+'! Vous pouvez maintenant vous connecter.');
-    }else{
-      alert('Code incorrect: '+(res.message||'')+'\n\nEssayez avec: DEV9999');
-    }
-  }catch(e){
-    alert('Erreur: '+e.message);
+  const res=await api('POST','/licence',{adminCode:code,action:'activer',anneeValidite:annee});
+  document.getElementById('lic-admin-code').value='';
+  if(res.ok){
+    document.getElementById('blocage-page').style.display='none';
+    document.getElementById('login-page').style.display='flex';
+    alert('Licence activee!');
+  }else{
+    alert('Code incorrect: '+(res.message||''));
   }
 }
+
 async function activerLicence(){
-  const annee=parseInt(document.getElementById('lic-annee')?.value)||new Date().getFullYear();
+  const annee=parseInt(document.getElementById('lic-annee-select')?.value)||new Date().getFullYear();
   const adminCode=document.getElementById('lic-confirm-code')?.value?.trim();
-  if(!adminCode){
-    alert('IMPORTANT: Entrez le code DEV9999 dans le champ Code Administrateur avant de cliquer Activer.');
-    document.getElementById('lic-confirm-code')?.focus();
-    return;
-  }
-  try{
-    const r=await fetch('/api/licence',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','X-Token':TOKEN||''},
-      body:JSON.stringify({adminCode:adminCode,action:'activer',anneeValidite:annee})
-    });
-    const res=await r.json();
-    console.log('Reponse activation:',res);
-    if(res.ok){
-      document.getElementById('lic-confirm-code').value='';
-      alert('Licence ACTIVEE pour '+annee+'!\n\nBlocage automatique prevu au 31/12/'+annee+'.\n\nTous les utilisateurs peuvent se connecter normalement.');
-      setTimeout(afficherLicenceStatus,500);
-      admin();
-    }else{
-      alert('ERREUR: '+(res.message||'Code incorrect')+'\n\nVerifiez que vous avez entre le bon code: DEV9999');
-      document.getElementById('lic-confirm-code').value='';
-    }
-  }catch(e){
-    alert('Erreur reseau: '+e.message);
+  if(!adminCode){alert('Entrez votre code administrateur.');document.getElementById('lic-confirm-code')?.focus();return;}
+  document.getElementById('lic-confirm-code').value='';
+  const res=await api('POST','/licence',{adminCode,action:'activer',anneeValidite:annee});
+  if(res.ok){
+    alert('LICENCE ACTIVEE!\nValide jusqu\'au 31/12/'+annee+'\n\nMettez a jour Railway Variables:\nLICENCE_DATA = {"active":true,"anneeValidite":'+annee+',"raisonBlocage":""}');
+    setTimeout(afficherLicenceStatus,300);
+    await admin();
+  }else{
+    alert('Code incorrect: '+(res.message||''));
   }
 }
+
 async function desactiverLicence(){
   const adminCode=document.getElementById('lic-confirm-code')?.value?.trim();
-  if(!adminCode){
-    alert('IMPORTANT: Entrez le code DEV9999 dans le champ Code Administrateur avant de cliquer Bloquer.');
-    document.getElementById('lic-confirm-code')?.focus();
-    return;
-  }
+  if(!adminCode){alert('Entrez votre code administrateur.');document.getElementById('lic-confirm-code')?.focus();return;}
   const raison=document.getElementById('lic-raison')?.value||'Desactivation manuelle';
-  if(!confirm('ATTENTION — Bloquer le systeme ? Tous les utilisateurs seront deconnectes.'))return;
-  
-  // Appel direct au serveur
-  try{
-    const r=await fetch('/api/licence',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','X-Token':TOKEN||''},
-      body:JSON.stringify({adminCode:adminCode,action:'desactiver',raison:raison})
-    });
-    const res=await r.json();
-    console.log('Reponse blocage:',res);
-    if(res.ok){
-      document.getElementById('lic-confirm-code').value='';
-      alert('Systeme BLOQUE avec succes!\n\nLe systeme est maintenant inaccessible pour tous les utilisateurs.\n\nPour reactiver: entrez le code DEV9999 sur la page de blocage.');
-      // Recharger la page pour confirmer le blocage
-      setTimeout(()=>location.reload(),1500);
-    }else{
-      alert('ERREUR: '+(res.message||'Code incorrect')+'\n\nVerifiez que vous avez entre le bon code: DEV9999');
-      document.getElementById('lic-confirm-code').value='';
-    }
-  }catch(e){
-    alert('Erreur reseau: '+e.message);
+  if(!confirm('ATTENTION — Bloquer INSTANTANEMENT pour TOUS les utilisateurs ?'))return;
+  document.getElementById('lic-confirm-code').value='';
+  const res=await api('POST','/licence',{adminCode,action:'desactiver',raison});
+  if(res.ok){
+    document.getElementById('blocage-annee').textContent=new Date().getFullYear();
+    document.getElementById('blocage-raison').textContent=raison;
+    document.getElementById('app-page').style.display='none';
+    document.getElementById('login-page').style.display='none';
+    document.getElementById('blocage-page').style.display='flex';
+    TOKEN=null;SESSION=null;DB_CACHE=null;
+    setTimeout(()=>{
+      alert('SYSTEME BLOQUE!\n\nRendre permanent sur Railway:\nVariables > LICENCE_DATA = {"active":false,"anneeValidite":'+new Date().getFullYear()+',"raisonBlocage":"'+raison+'"}');
+    },400);
+  }else{
+    alert('Code incorrect: '+(res.message||''));
   }
 }
+
 async function afficherLicenceStatus(){
   const el=document.getElementById('lic-status-block');
   if(!el)return;
@@ -505,8 +471,8 @@ async function afficherLicenceStatus(){
     const fin=new Date(lic.anneeValidite||new Date().getFullYear(),11,31);
     const j=Math.ceil((fin-new Date())/(1000*60*60*24));
     el.innerHTML=d.valid
-      ?'<div style="background:#d1fae5;border:1px solid #059669;border-radius:6px;padding:8px;font-size:11px;font-weight:700;color:#065f46">Licence ACTIVE - 31/12/'+(lic.anneeValidite||'?')+' ('+Math.max(0,j)+' jours)</div>'
-      :'<div style="background:#fee2e2;border:1px solid #dc2626;border-radius:6px;padding:8px;font-size:11px;font-weight:700;color:#991b1b">Licence INACTIVE</div>';
+      ?'<div style="background:#d1fae5;border:1px solid #059669;border-radius:6px;padding:8px;font-size:11px;font-weight:700;color:#065f46">Licence ACTIVE — Valide jusqu\'au 31/12/'+(lic.anneeValidite||'?')+' ('+Math.max(0,j)+' jours)</div>'
+      :'<div style="background:#fee2e2;border:1px solid #dc2626;border-radius:6px;padding:8px;font-size:11px;font-weight:700;color:#991b1b">Licence INACTIVE — '+(lic.raisonBlocage||'Expiree')+'</div>';
   }catch(e){}
 }
 async function connexion(){
@@ -514,8 +480,8 @@ async function connexion(){
   const mdp=document.getElementById('lpwd').value.trim();
   const errEl=document.getElementById('lerr');
   errEl.style.display='none';
-  if(!id){errEl.textContent='Veuillez choisir votre identifiant.';errEl.style.display='block';return;}
-  if(!mdp){errEl.textContent='Veuillez entrer votre mot de passe.';errEl.style.display='block';return;}
+  if(!id){errEl.textContent='Choisissez votre identifiant.';errEl.style.display='block';return;}
+  if(!mdp){errEl.textContent='Entrez votre mot de passe.';errEl.style.display='block';return;}
   const btn=document.getElementById('lbtn');
   if(btn){btn.disabled=true;btn.textContent='Connexion...';}
   const res=await api('POST','/login',{identifiant:id,password:mdp});
@@ -526,11 +492,10 @@ async function connexion(){
     document.getElementById('lpwd').value='';
     document.getElementById('lpwd').focus();return;
   }
-  TOKEN=res.token;SESSION=res.user;viderCache();
-  lancerApp();
+  TOKEN=res.token;SESSION=res.user;viderCache();lancerApp();
 }
 async function deconnexion(){
-  if(TOKEN) await api('POST','/logout');
+  if(TOKEN)await api('POST','/logout');
   TOKEN=null;SESSION=null;DB_CACHE=null;
   document.getElementById('lid').value='';document.getElementById('lpwd').value='';
   document.getElementById('lerr').style.display='none';
@@ -1762,77 +1727,56 @@ async function rapport(){
 // ═══ AUDIT ════════════════════════════════════════════════════
 async function audit(){
   aff('<div class="page on"><div class="ptitle">Journal audit</div><div class="card"><p class="muted" style="padding:14px">Chargement...</p></div></div>');
-  const res=await api('GET','/audit');
+  const res=await api("GET","/audit");
   const log=res.ok?res.data:[];
-  const rows=log.length?log.map(function(l){return '<div style="display:flex;align-items:center;gap:7px;padding:7px 0;border-bottom:1px solid var(--BL);font-size:11px"><span class="badge '+(l.action.includes('Connexion')?'bg2':l.action.includes('Deco')?'br2':'bb')+'">'+l.action+'</span><span style="flex:1">'+l.detail+'</span><span class="muted">'+l.user+'</span><span class="muted" style="font-size:10px;margin-left:6px">'+l.ts+'</span></div>';}).join(''):'<p class="muted" style="padding:14px">Aucune action.</p>';
-  aff('<div class="page on"><div class="ptitle">Journal audit</div><div class="card">'+rows+'</div></div>');
+  const rows=log.length?log.map(function(l){return "<div style=\"display:flex;align-items:center;gap:7px;padding:7px 0;border-bottom:1px solid var(--BL);font-size:11px\"><span class=\"badge "+(l.action.includes("Connexion")?"bg2":l.action.includes("Deco")?"br2":"bb")+"\">" +l.action+"</span><span style=\"flex:1\">"+l.detail+"</span><span class=\"muted\">"+l.user+"</span><span class=\"muted\" style=\"font-size:10px;margin-left:6px\">"+l.ts+"</span></div>";}).join(""):"<p class=\"muted\" style=\"padding:14px\">Aucune action.</p>";
+  aff("<div class=\"page on\"><div class=\"ptitle\">Journal audit</div><div class=\"card\">"+rows+"</div></div>");
 }
 
 // ═══ CODES D'ACCÈS ════════════════════════════════════════════
 async function codes(){
-  if(SESSION.role!=='directeur'&&SESSION.role!=='concepteur'){aff('<div class="page on"><div class="warn-bar">Accès refusé.</div></div>');return;}
-  let savedCodes={};
-  try{const c=localStorage.getItem('csb2_codes');if(c)savedCodes=JSON.parse(c);}catch(e){}
-  // Le directeur ne voit PAS le code concepteur
+  if(SESSION.role!=="directeur"&&SESSION.role!=="concepteur"){aff('<div class="page on"><div class="warn-bar">Acces refuse.</div></div>');return;}
+  const res=await api("GET","/codes");
+  let savedCodes=res.ok?res.data:{};
   const users=[
-    {id:'directeur',l:'Directeur',def:'DIR2026'},
-    {id:'accueil',l:'Accueil',def:'ACC001'},
-    {id:'medecin',l:'Médecin',def:'MED001'},
-    {id:'infirmier',l:'Infirmier(e)',def:'INF001'},
-    {id:'labo',l:'Laborantin',def:'LAB001'},
-    {id:'pharmacien',l:'Pharmacien(ne)',def:'PHA001'},
-    {id:'comptabilite',l:'Comptabilité',def:'CPT001'}
+    {id:"directeur",l:"Directeur",def:"DIR2026"},
+    {id:"accueil",l:"Accueil",def:"ACC001"},
+    {id:"medecin",l:"Medecin",def:"MED001"},
+    {id:"infirmier",l:"Infirmier(e)",def:"INF001"},
+    {id:"labo",l:"Laborantin",def:"LAB001"},
+    {id:"pharmacien",l:"Pharmacien(ne)",def:"PHA001"},
+    {id:"comptabilite",l:"Comptabilite",def:"CPT001"}
   ];
-  // Charger comptes extra (laborantins additionnels)
-  let extras=[];
-  try{const e=localStorage.getItem('csb2_extra_comptes');if(e)extras=JSON.parse(e);}catch(e){}
-
-  aff(`<div class="page on"><div class="ptitle">Gestion des codes d'accès</div>
-  <div class="info-bar">Le Directeur peut modifier tous les mots de passe — sauf celui de l'Administrateur système (invisible).</div>
-  <div class="card"><div class="ctitle">Modifier les mots de passe</div>
-  ${users.map(u=>`<div class="g3" style="margin-bottom:8px;align-items:flex-end">
+  aff(`<div class="page on"><div class="ptitle">Codes acces</div>
+  <div class="info-bar">Le Directeur peut modifier les mots de passe — sauf celui de l'Administrateur.</div>
+  <div class="card">${users.map(u=>`<div class="g3" style="margin-bottom:10px;align-items:flex-end">
     <div class="fg" style="margin-bottom:0"><label>${u.l}</label><input type="text" value="${savedCodes[u.id]||u.def}" readonly style="background:var(--BL)"></div>
     <div class="fg" style="margin-bottom:0"><label>Nouveau mot de passe</label><input type="password" id="new-${u.id}" placeholder="Laisser vide = pas de changement"></div>
-    <button class="btn btnp" style="height:32px" onclick="changerCode('${u.id}')">Mettre à jour</button>
-  </div>`).join('')}
-  </div>
-  <div class="card"><div class="ctitle">Ajouter un laborantin supplémentaire</div>
-  <div class="g3">
-    <div class="fg"><label>Identifiant (unique)</label><input id="ex-id" placeholder="ex: labo2"></div>
-    <div class="fg"><label>Nom affiché</label><input id="ex-nom" placeholder="ex: Laborantin 2"></div>
-    <div class="fg"><label>Mot de passe</label><input type="password" id="ex-mdp" placeholder="Mot de passe"></div>
-  </div>
-  <div class="br"><button class="btn btnp" onclick="ajouterLaborantin()">Ajouter</button></div>
-  ${extras.length?`<div class="ctitle" style="margin-top:14px">Comptes supplémentaires</div><div class="tw"><table><thead><tr><th>Identifiant</th><th>Nom</th><th>Rôle</th></tr></thead><tbody>${extras.map(e=>`<tr><td><code>${e.id}</code></td><td>${e.label}</td><td>${e.role}</td></tr>`).join('')}</tbody></table></div>`:''}
-  </div></div>`);
+    <button class="btn btnp" onclick="changerCode('${u.id}')">Mettre a jour</button>
+  </div>`).join("")}</div></div>`);
 }
 async function changerCode(userId){
-  const newPwd=document.getElementById('new-'+userId)?.value?.trim();
-  if(!newPwd){alert('Entrez un nouveau mot de passe');return;}
-  if(newPwd.length<4){alert('Minimum 4 caractères');return;}
-  let codes={};try{const c=localStorage.getItem('csb2_codes');if(c)codes=JSON.parse(c);}catch(e){}
-  codes[userId]=newPwd;
-  if(COMPTES[userId])COMPTES[userId].mdp=newPwd;
-  try{localStorage.setItem('csb2_codes',JSON.stringify(codes));}catch(e){}
-  await logAudit('Code modifié','Utilisateur: '+userId);
-  alert('Mot de passe mis à jour : '+userId);codes();
+  const newPwd=document.getElementById("new-"+userId)?.value?.trim();
+  if(!newPwd){alert("Entrez un nouveau mot de passe");return;}
+  if(newPwd.length<4){alert("Minimum 4 caracteres");return;}
+  const res=await api("POST","/codes",{userId,newPassword:newPwd});
+  if(!res.ok){alert("Erreur: "+(res.message||"inconnue"));return;}
+  alert("Mot de passe mis a jour : "+userId);
+  await codes();
 }
 async function ajouterLaborantin(){
-  const id=document.getElementById('ex-id')?.value?.trim()?.toLowerCase();
-  const nom=document.getElementById('ex-nom')?.value?.trim();
-  const mdp=document.getElementById('ex-mdp')?.value?.trim();
-  if(!id||!nom||!mdp){alert('Tous les champs sont obligatoires');return;}
-  if(COMPTES[id]){alert('Cet identifiant existe déjà');return;}
-  let extras=[];try{const e=localStorage.getItem('csb2_extra_comptes');if(e)extras=JSON.parse(e);}catch(e){}
-  const nouveau={id,label:nom,mdp,role:'labo',couleur:'#d97706',bg:'#fef3c7'};
-  extras.push(nouveau);
-  COMPTES[id]=nouveau;
-  // Ajouter dans le select du login
-  const sel=document.getElementById('lid');
-  if(sel){const opt=document.createElement('option');opt.value=id;opt.textContent=nom;sel.appendChild(opt);}
-  try{localStorage.setItem('csb2_extra_comptes',JSON.stringify(extras));}catch(e){}
-  await logAudit('Laborantin ajouté',id+' — '+nom);
-  alert('Laborantin ajouté : '+nom);codes();
+  const id=document.getElementById("ex-id")?.value?.trim()?.toLowerCase();
+  const nom=document.getElementById("ex-nom")?.value?.trim();
+  const mdp=document.getElementById("ex-mdp")?.value?.trim();
+  if(!id||!nom||!mdp){alert("Tous les champs sont obligatoires");return;}
+  const res=await api("POST","/extra_comptes",{id,label:nom,mdp});
+  if(!res.ok){alert("Erreur: "+(res.message||"inconnue"));return;}
+  const sel=document.getElementById("lid");
+  if(sel&&!sel.querySelector("option[value=\""+id+"\"]")){
+    const opt=document.createElement("option");opt.value=id;opt.textContent=nom+" (Laborantin)";sel.appendChild(opt);
+  }
+  alert("Laborantin ajoute : "+nom);
+  await codes();
 }
 
 // ═══ ADMIN SYSTÈME (Concepteur — invisible pour directeur) ════
@@ -1855,6 +1799,7 @@ async function desactiverLicence(){
 async function admin(){
   if(SESSION.role!=='concepteur'){aff('<div class="page on"><div class="warn-bar">Accès réservé à l\'Administrateur système.</div></div>');return;}
   const db=await getDB();
+  setTimeout(afficherLicenceStatus,100);
   let savedCodes={};try{const c=localStorage.getItem('csb2_codes');if(c)savedCodes=JSON.parse(c);}catch(e){}
   // Récupérer TOUS les codes y compris concepteur
   const tousLesCodes={...savedCodes};
@@ -1862,29 +1807,25 @@ async function admin(){
 
   aff(`<div class="page on"><div class="ptitle">Administration système <span class="badge bn">Administrateur</span></div>
   <div class="info-bar">Accès Administrateur — audit complet, maintenance, récupération de codes.</div>
-  <div class="card" style="border:2px solid var(--R)">
-    <div class="ctitle">Controle licence annuelle</div>
+  <div class="card" style="border:2px solid var(--R);margin-bottom:14px">
+    <div class="ctitle">Controle de la licence</div>
     <div id="lic-status-block" style="margin-bottom:10px"></div>
-    <div class="g2">
-      <div class="fg"><label>Annee de validite</label>
-        <select id="lic-annee">
-          <option value="2026">2026</option>
-          <option value="2027">2027</option>
-          <option value="2028">2028</option>
-        </select>
+    <div class="g3">
+      <div class="fg"><label>Annee de fin de validite</label>
+        <select id="lic-annee-select"><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option><option value="2031">2031</option><option value="2032">2032</option><option value="2033">2033</option><option value="2034">2034</option><option value="2035">2035</option></select>
       </div>
-      <div class="fg"><label>Code Administrateur (requis)</label>
-        <input type="password" id="lic-confirm-code" placeholder="Entrez votre code DEV9999...">
+      <div class="fg"><label>Code Administrateur</label>
+        <input type="password" id="lic-confirm-code" placeholder="Votre code secret..." autocomplete="new-password">
       </div>
-    </div>
-    <div class="fg"><label>Raison du blocage (si blocage)</label>
-      <input id="lic-raison" placeholder="Ex: Fin de contrat, maintenance...">
+      <div class="fg"><label>Raison du blocage</label>
+        <input id="lic-raison" placeholder="Ex: Fin de contrat...">
+      </div>
     </div>
     <div class="br">
-      <button onclick="activerLicence()" class="btn btng">✓ Activer la licence</button>
-      <button onclick="desactiverLicence()" class="btn btnr">✗ Bloquer le systeme</button>
+      <button onclick="activerLicence()" class="btn btng" style="flex:1">Activer</button>
+      <button onclick="desactiverLicence()" class="btn btnr" style="flex:1">Bloquer instantanement</button>
     </div>
-    <div class="info-bar" style="margin-top:8px">Blocage automatique au 31/12 de l'annee selectionnee. Le code administrateur est requis pour confirmer toute action.</div>
+    <div class="info-bar" style="margin-top:8px">Code efface auto. Blocage instantane mondial. Verification toutes les 30s.</div>
   </div>
   <div class="card" style="border:2px solid var(--R)">
     <div class="ctitle">Controle de la licence annuelle</div>
@@ -1927,7 +1868,6 @@ async function admin(){
     <button class="btn btng" onclick="exporterDB()">Exporter toutes les données (JSON)</button>
     <button class="btn btnr" onclick="if(confirm('ATTENTION — Tout effacer ? Irréversible !'))reinitDB()">Réinitialiser la base</button>
   </div></div></div>`);
-  setTimeout(afficherLicenceStatus,100);
   setTimeout(afficherLicenceStatus, 10);
 }
 async function changerCodeConcepteur(){
@@ -1940,7 +1880,7 @@ async function changerCodeConcepteur(){
   alert('Code Administrateur mis à jour.');admin();
 }
 function exporterDB(){window.open('/api/backup','_blank');}
-function reinitDB(){alert('Contactez l\'administrateur.');}
+function reinitDB(){alert('Contactez administrateur.');}
 </script>
 </body>
 </html>
