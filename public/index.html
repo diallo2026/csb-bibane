@@ -413,35 +413,87 @@ window.addEventListener('DOMContentLoaded',()=>{
 });
 async function debloquerLicence(){
   const code=document.getElementById('lic-admin-code')?.value?.trim();
-  if(!code){alert('Entrez le code administrateur');return;}
-  const res=await api('POST','/licence',{adminCode:code,action:'activer',anneeValidite:new Date().getFullYear()});
-  if(res.ok){
-    document.getElementById('blocage-page').style.display='none';
-    document.getElementById('login-page').style.display='flex';
-    document.getElementById('lic-admin-code').value='';
-    alert('Licence activee!');
-  }else{alert('Code incorrect.');}
+  if(!code){alert('Entrez le code administrateur (DEV9999)');return;}
+  const annee=new Date().getFullYear();
+  try{
+    const r=await fetch('/api/licence',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({adminCode:code,action:'activer',anneeValidite:annee})
+    });
+    const res=await r.json();
+    if(res.ok){
+      document.getElementById('blocage-page').style.display='none';
+      document.getElementById('login-page').style.display='flex';
+      document.getElementById('lic-admin-code').value='';
+      alert('Licence activee pour '+annee+'! Vous pouvez maintenant vous connecter.');
+    }else{
+      alert('Code incorrect: '+(res.message||'')+'\n\nEssayez avec: DEV9999');
+    }
+  }catch(e){
+    alert('Erreur: '+e.message);
+  }
 }
 async function activerLicence(){
   const annee=parseInt(document.getElementById('lic-annee')?.value)||new Date().getFullYear();
   const adminCode=document.getElementById('lic-confirm-code')?.value?.trim();
-  if(!adminCode){alert('Entrez votre code administrateur avant de continuer.');document.getElementById('lic-confirm-code')?.focus();return;}
-  const res=await api('POST','/licence',{adminCode,action:'activer',anneeValidite:annee});
-  if(!res.ok){alert('Code incorrect ou erreur: '+(res.message||''));document.getElementById('lic-confirm-code').value='';return;}
-  document.getElementById('lic-confirm-code').value='';
-  alert('Licence activee pour '+annee+'. Le systeme se bloquera automatiquement au 31/12/'+annee+'.');
-  admin();
+  if(!adminCode){
+    alert('IMPORTANT: Entrez le code DEV9999 dans le champ Code Administrateur avant de cliquer Activer.');
+    document.getElementById('lic-confirm-code')?.focus();
+    return;
+  }
+  try{
+    const r=await fetch('/api/licence',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Token':TOKEN||''},
+      body:JSON.stringify({adminCode:adminCode,action:'activer',anneeValidite:annee})
+    });
+    const res=await r.json();
+    console.log('Reponse activation:',res);
+    if(res.ok){
+      document.getElementById('lic-confirm-code').value='';
+      alert('Licence ACTIVEE pour '+annee+'!\n\nBlocage automatique prevu au 31/12/'+annee+'.\n\nTous les utilisateurs peuvent se connecter normalement.');
+      setTimeout(afficherLicenceStatus,500);
+      admin();
+    }else{
+      alert('ERREUR: '+(res.message||'Code incorrect')+'\n\nVerifiez que vous avez entre le bon code: DEV9999');
+      document.getElementById('lic-confirm-code').value='';
+    }
+  }catch(e){
+    alert('Erreur reseau: '+e.message);
+  }
 }
 async function desactiverLicence(){
   const adminCode=document.getElementById('lic-confirm-code')?.value?.trim();
-  if(!adminCode){alert('Entrez votre code administrateur avant de continuer.');document.getElementById('lic-confirm-code')?.focus();return;}
+  if(!adminCode){
+    alert('IMPORTANT: Entrez le code DEV9999 dans le champ Code Administrateur avant de cliquer Bloquer.');
+    document.getElementById('lic-confirm-code')?.focus();
+    return;
+  }
   const raison=document.getElementById('lic-raison')?.value||'Desactivation manuelle';
-  if(!confirm('ATTENTION — Tous les utilisateurs seront bloques immediatement. Confirmer?'))return;
-  const res=await api('POST','/licence',{adminCode,action:'desactiver',raison});
-  if(!res.ok){alert('Code incorrect ou erreur: '+(res.message||''));document.getElementById('lic-confirm-code').value='';return;}
-  document.getElementById('lic-confirm-code').value='';
-  alert('Systeme bloque avec succes. Pour reactiver, connectez-vous en tant qu\'administrateur.');
-  admin();
+  if(!confirm('ATTENTION — Bloquer le systeme ? Tous les utilisateurs seront deconnectes.'))return;
+  
+  // Appel direct au serveur
+  try{
+    const r=await fetch('/api/licence',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Token':TOKEN||''},
+      body:JSON.stringify({adminCode:adminCode,action:'desactiver',raison:raison})
+    });
+    const res=await r.json();
+    console.log('Reponse blocage:',res);
+    if(res.ok){
+      document.getElementById('lic-confirm-code').value='';
+      alert('Systeme BLOQUE avec succes!\n\nLe systeme est maintenant inaccessible pour tous les utilisateurs.\n\nPour reactiver: entrez le code DEV9999 sur la page de blocage.');
+      // Recharger la page pour confirmer le blocage
+      setTimeout(()=>location.reload(),1500);
+    }else{
+      alert('ERREUR: '+(res.message||'Code incorrect')+'\n\nVerifiez que vous avez entre le bon code: DEV9999');
+      document.getElementById('lic-confirm-code').value='';
+    }
+  }catch(e){
+    alert('Erreur reseau: '+e.message);
+  }
 }
 async function afficherLicenceStatus(){
   const el=document.getElementById('lic-status-block');
