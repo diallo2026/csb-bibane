@@ -156,6 +156,16 @@ code{background:var(--BL);padding:1px 6px;border-radius:4px;font-family:monospac
   </div>
 </div>
 <!-- ═══ APPLICATION ═══════════════════════════════════════════ -->
+<div id="blocage-page" style="display:none;min-height:100vh;align-items:center;justify-content:center;background:linear-gradient(135deg,#991b1b,#dc2626);position:fixed;top:0;left:0;width:100%;z-index:9999">
+  <div style="background:#fff;border-radius:16px;padding:36px;max-width:480px;width:90%;text-align:center">
+    <div style="font-size:40px;margin-bottom:12px">&#128274;</div>
+    <h2 style="color:#991b1b;margin-bottom:10px">Acces bloque</h2>
+    <p style="color:#64748b;font-size:13px;margin-bottom:12px">Licence expiree — annee <strong id="blocage-annee">—</strong></p>
+    <p style="color:#dc2626;font-size:12px;padding:10px;background:#fee2e2;border-radius:8px;margin-bottom:16px" id="blocage-raison">—</p>
+    <input type="password" id="lic-admin-code" placeholder="Code administrateur" style="width:100%;padding:9px 12px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:13px;outline:none;margin-bottom:10px">
+    <button onclick="debloquerLicence()" style="width:100%;padding:11px;background:#dc2626;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Activer la licence</button>
+  </div>
+</div>
 <div id="app-page" style="display:none;min-height:100vh;flex-direction:row">
 <div class="sidebar">
   <div class="sb-brand">
@@ -270,10 +280,9 @@ const COMPTES_BASE={
 let COMPTES={...COMPTES_BASE};
 
 // ═══ BASE DE DONNÉES ══════════════════════════════════════════
-// API SERVEUR CENTRAL
+// SERVEUR API
 let TOKEN=null;
 let DB_CACHE=null;
-
 async function api(method,path,body){
   const opts={method,headers:{'Content-Type':'application/json'}};
   if(TOKEN) opts.headers['X-Token']=TOKEN;
@@ -281,27 +290,23 @@ async function api(method,path,body){
   try{
     const r=await fetch('/api'+path,opts);
     const data=await r.json();
-    if(data.licenceExpired){showBlocagePage();return{ok:false};}
     return data;
   }catch(e){return{ok:false,message:'Serveur inaccessible'};}
 }
-
 async function getDB(){
   if(DB_CACHE) return DB_CACHE;
   const res=await api('GET','/db');
   if(res.ok){DB_CACHE=res.data;return DB_CACHE;}
-  return {patients:[],consultations:[],examens:[],rdv:[],pharmacie:{medicaments:[],milda:[],vaccins_stock:[]},commandes_phar:[],facturation:{consultations:[],examens:[],pharmacie:[]},depenses:[],subventions:[],personnel:[],salaires:[],vaccination:[],planif_fam:[],cpn:[],parametres:{repartition:{pctDir:0.50,pctSal:0.25,pctCharge:0.15,pctDon:0.10}}};
+  return{patients:[],consultations:[],examens:[],rdv:[],pharmacie:{medicaments:[],milda:[],vaccins_stock:[]},commandes_phar:[],facturation:{consultations:[],examens:[],pharmacie:[]},depenses:[],subventions:[],personnel:[],salaires:[],vaccination:[],planif_fam:[],cpn:[],parametres:{repartition:{pctDir:0.50,pctSal:0.25,pctCharge:0.15,pctDon:0.10}}};
 }
-
 async function sf(field,data,sub){
   const db=await getDB();
   if(sub){if(!db[field])db[field]={};db[field][sub]=data;}
   else db[field]=data;
   DB_CACHE=db;
-  if(sub){await api('POST','/db/'+field+'/'+sub,{data});}
-  else{await api('POST','/db/'+field,{data});}
+  if(sub) await api('POST','/db/'+field+'/'+sub,{data});
+  else await api('POST','/db/'+field,{data});
 }
-
 function viderCache(){DB_CACHE=null;}
 
 async function logAudit(action,detail){
@@ -309,7 +314,24 @@ async function logAudit(action,detail){
 }
 
 // ═══ AUTH ═════════════════════════════════════════════════════
-function chargerCodes(){} // handled by server
+function chargerCodes(){
+  try{
+    const c=localStorage.getItem('csb2_codes');
+    if(c){
+      const codes=JSON.parse(c);
+      // Ne jamais exposer le code concepteur dans les codes standards
+      Object.keys(codes).forEach(id=>{
+        if(id!=='concepteur'&&COMPTES[id])COMPTES[id].mdp=codes[id];
+      });
+    }
+    // Charger aussi les comptes supplémentaires (laborantins ajoutés)
+    const extra=localStorage.getItem('csb2_extra_comptes');
+    if(extra){
+      const extras=JSON.parse(extra);
+      extras.forEach(c=>{COMPTES[c.id]={...c};});
+    }
+  }catch(e){}
+}
 
 
 // ==========================================
@@ -351,14 +373,17 @@ function showBlocagePage(){
 async function debloquerLicence(){
   const code=document.getElementById('lic-admin-code')?.value?.trim();
   if(!code){alert('Entrez le code administrateur');return;}
-  const annee=new Date().getFullYear();
-  const res=await api('POST','/licence',{adminCode:code,action:'activer',anneeValidite:annee});
-  if(res.ok){
+  chargerCodes();
+  if(COMPTES.concepteur&&COMPTES.concepteur.mdp===code){
+    const nouvelleAnnee=new Date().getFullYear();
+    saveLicenceData({active:true,anneeValidite:nouvelleAnnee,activePar:'Administrateur',activeLe:auj(),raisonBlocage:''});
     document.getElementById('blocage-page').style.display='none';
     document.getElementById('login-page').style.display='flex';
     document.getElementById('lic-admin-code').value='';
-    alert('Licence activee pour '+annee+'.');
-  }else{alert('Code administrateur incorrect.');}
+    alert('Licence activee pour '+nouvelleAnnee+'. Blocage auto au 31/12/'+nouvelleAnnee+'.');
+  } else {
+    alert('Code administrateur incorrect.');
+  }
 }
 
 // Vérifier la licence au chargement de la page
@@ -369,31 +394,88 @@ window.addEventListener('DOMContentLoaded',()=>{
   }
 });
 
+
+// LICENCE
+window.addEventListener('DOMContentLoaded',()=>{
+  setTimeout(async()=>{
+    try{
+      const r=await fetch('/api/licence');
+      const d=await r.json();
+      if(d&&d.valid===false){
+        const lic=d.data||{};
+        document.getElementById('blocage-annee').textContent=lic.anneeValidite||new Date().getFullYear();
+        document.getElementById('blocage-raison').textContent=lic.raisonBlocage||'Licence expiree.';
+        document.getElementById('blocage-page').style.display='flex';
+        document.getElementById('login-page').style.display='none';
+      }
+    }catch(e){}
+  },500);
+});
+async function debloquerLicence(){
+  const code=document.getElementById('lic-admin-code')?.value?.trim();
+  if(!code){alert('Entrez le code administrateur');return;}
+  const res=await api('POST','/licence',{adminCode:code,action:'activer',anneeValidite:new Date().getFullYear()});
+  if(res.ok){
+    document.getElementById('blocage-page').style.display='none';
+    document.getElementById('login-page').style.display='flex';
+    document.getElementById('lic-admin-code').value='';
+    alert('Licence activee!');
+  }else{alert('Code incorrect.');}
+}
+async function activerLicence(){
+  const annee=parseInt(document.getElementById('lic-annee')?.value)||new Date().getFullYear();
+  const adminCode=prompt('Code Administrateur:');
+  if(!adminCode)return;
+  const res=await api('POST','/licence',{adminCode,action:'activer',anneeValidite:annee});
+  if(!res.ok){alert('Erreur: '+(res.message||'Code incorrect'));return;}
+  alert('Licence activee pour '+annee+'.');admin();
+}
+async function desactiverLicence(){
+  const raison=document.getElementById('lic-raison')?.value||'Desactivation manuelle';
+  if(!confirm('ATTENTION - Bloquer maintenant?'))return;
+  const adminCode=prompt('Code Administrateur:');
+  if(!adminCode)return;
+  const res=await api('POST','/licence',{adminCode,action:'desactiver',raison});
+  if(!res.ok){alert('Erreur: '+(res.message||'Code incorrect'));return;}
+  alert('Systeme bloque.');admin();
+}
+async function afficherLicenceStatus(){
+  const el=document.getElementById('lic-status-block');
+  if(!el)return;
+  try{
+    const r=await fetch('/api/licence');
+    const d=await r.json();
+    const lic=d.data||{};
+    const fin=new Date(lic.anneeValidite||new Date().getFullYear(),11,31);
+    const j=Math.ceil((fin-new Date())/(1000*60*60*24));
+    el.innerHTML=d.valid
+      ?'<div style="background:#d1fae5;border:1px solid #059669;border-radius:6px;padding:8px;font-size:11px;font-weight:700;color:#065f46">Licence ACTIVE - 31/12/'+(lic.anneeValidite||'?')+' ('+Math.max(0,j)+' jours)</div>'
+      :'<div style="background:#fee2e2;border:1px solid #dc2626;border-radius:6px;padding:8px;font-size:11px;font-weight:700;color:#991b1b">Licence INACTIVE</div>';
+  }catch(e){}
+}
 async function connexion(){
   const id=document.getElementById('lid').value;
   const mdp=document.getElementById('lpwd').value.trim();
-  const err=document.getElementById('lerr');
-  err.style.display='none';
-  if(!id){err.textContent='Veuillez choisir votre identifiant.';err.style.display='block';return;}
-  if(!mdp){err.textContent='Veuillez entrer votre mot de passe.';err.style.display='block';return;}
+  const errEl=document.getElementById('lerr');
+  errEl.style.display='none';
+  if(!id){errEl.textContent='Veuillez choisir votre identifiant.';errEl.style.display='block';return;}
+  if(!mdp){errEl.textContent='Veuillez entrer votre mot de passe.';errEl.style.display='block';return;}
   const btn=document.getElementById('lbtn');
   if(btn){btn.disabled=true;btn.textContent='Connexion...';}
   const res=await api('POST','/login',{identifiant:id,password:mdp});
   if(btn){btn.disabled=false;btn.textContent='Se connecter';}
-  if(res.licenceExpired){showBlocagePage();return;}
   if(!res.ok){
-    err.textContent=res.message||'Identifiant ou mot de passe incorrect';
-    err.style.display='block';
+    errEl.textContent=res.message||'Identifiant ou mot de passe incorrect';
+    errEl.style.display='block';
     document.getElementById('lpwd').value='';
     document.getElementById('lpwd').focus();return;
   }
-  TOKEN=res.token;SESSION=res.user;
-  viderCache();
+  TOKEN=res.token;SESSION=res.user;viderCache();
   lancerApp();
 }
 async function deconnexion(){
   if(TOKEN) await api('POST','/logout');
-  TOKEN=null;SESSION=null;viderCache();
+  TOKEN=null;SESSION=null;DB_CACHE=null;
   document.getElementById('lid').value='';document.getElementById('lpwd').value='';
   document.getElementById('lerr').style.display='none';
   document.getElementById('app-page').style.display='none';
@@ -657,7 +739,7 @@ function buildPatTable(liste){
   <tbody>${liste.map(p=>`<tr><td><code style="font-size:12px;font-weight:800">${p.id}</code></td><td><strong>${p.nom}</strong></td><td>${p.naiss||'—'}</td><td>${p.lieu||'—'}</td><td>${p.sexe}</td><td>${p.tel||'—'}</td><td><span class="badge br2">${p.sang||'—'}</span></td></tr>`).join('')}</tbody></table>`;
 }
 async function filtrerPats(){
-  const q= async (document.getElementById('p-search')?.value||'').toLowerCase();
+  const q=(document.getElementById('p-search')?.value||'').toLowerCase();
   const db=await getDB();
   const liste=q?db.patients.filter(p=>p.nom.toLowerCase().includes(q)||p.id.toLowerCase().includes(q)):db.patients;
   const el=document.getElementById('p-list');if(el)el.innerHTML=buildPatTable(liste);
@@ -765,7 +847,7 @@ async function sauverRdv(){
 }
 async function statutRdv(id,statut){
   const db=await getDB();const r=db.rdv.find(x=>x.id===id);
-  if(r){r.statut=statut;sf('rdv',db.rdv);aller('rdv');}
+  if(r){r.statut=statut;await sf('rdv',db.rdv);aller('rdv');}
 }
 
 // ═══ CONSULTATIONS (Médecin) ══════════════════════════════════
@@ -875,7 +957,7 @@ async function sauverConsult(){
     db.facturation.consultations.push({id:'FC-'+Date.now(),patId,nomPatient,date:dateVal,mois:d.getMonth(),annee:d.getFullYear(),montant,ref:consId,statut:'En attente'});
     await sf('facturation',db.facturation);
   }
-  await sf('consultations',db.consultations);sf('patients',db.patients);
+  await sf('consultations',db.consultations);await sf('patients',db.patients);
   await logAudit('Consultation',nomPatient);aller('consultations');
 }
 
@@ -912,7 +994,7 @@ async function switchVaccTab(tab){
   else if(tab==='pf')el2.innerHTML=buildPFForm(db);
   else el2.innerHTML=buildCPoNForm(db);
 }
-async function buildVaccinForm(db){
+function buildVaccinForm(db){
   const patOpts='<option value="">— Code patient —</option>'+db.patients.map(p=>`<option value="${p.id}">${p.id} — ${p.nom}</option>`).join('');
   const liste=db.vaccination.filter(v=>v.mois===curMois&&v.annee===curAnnee);
   return`<div class="card"><div class="ctitle">Enregistrement vaccination (Registre PEV SIS-PEV-R-01)</div>
@@ -990,7 +1072,7 @@ async function sauverVaccin(){
   alert('Vaccination enregistrée pour : '+nomPatient);
   switchVaccTab('vaccin');
 }
-async function buildPFForm(db){
+function buildPFForm(db){
   const patOpts='<option value="">— Code patient —</option>'+db.patients.map(p=>`<option value="${p.id}">${p.id} — ${p.nom}</option>`).join('');
   const liste=db.planif_fam.filter(p=>p.mois===curMois&&p.annee===curAnnee);
   return`<div class="card"><div class="ctitle">Planification familiale</div>
@@ -1027,7 +1109,7 @@ async function sauverPF(){
   db.planif_fam.push({id:'PF-'+Date.now(),patId:document.getElementById('pf-pat')?.value,nomPatient:nom,dossier:document.getElementById('pf-doss')?.value||'',date:dateVal,mois:d.getMonth(),annee:d.getFullYear(),age:document.getElementById('pf-age')?.value||'',grp:document.getElementById('pf-grp')?.value||'B',typeUtil:document.getElementById('pf-type')?.value||'',methode:document.getElementById('pf-meth')?.value||'',qte:document.getElementById('pf-qte')?.value||1,obs:document.getElementById('pf-obs')?.value||'',operateur:SESSION.label});
   await sf('planif_fam',db.planif_fam);await logAudit('PF',nom);alert('PF enregistrée');switchVaccTab('pf');
 }
-async function buildCPoNForm(db){
+function buildCPoNForm(db){
   const patOpts='<option value="">— Code patient —</option>'+db.patients.map(p=>`<option value="${p.id}">${p.id} — ${p.nom}</option>`).join('');
   const liste=db.cpn.filter(c=>c.mois===curMois&&c.annee===curAnnee);
   return`<div class="card"><div class="ctitle">Consultation Postnatale (CPoN)</div>
@@ -1160,7 +1242,7 @@ async function sauverMed(){
   await sf('pharmacie',db.pharmacie);await logAudit('Médicament',code);effacerMed();aller('stock_med');
 }
 function effacerMed(){['code','des','stock','seuil','pa','pv','per'].forEach(f=>{const e=document.getElementById('med-'+f);if(e)e.value='';});}
-async function editerMed(code){
+function editerMed(code){
   const m=getDB().pharmacie.medicaments.find(x=>x.code===code);if(!m)return;
   ['code','des','stock','seuil','pa','pv','per'].forEach(f=>{const e=document.getElementById('med-'+f);if(e)e.value=m[f]||'';});
   const ef=document.getElementById('med-forme');if(ef)ef.value=m.forme;window.scrollTo(0,0);
@@ -1270,7 +1352,7 @@ async function sauverDis(){
   }
   const d=new Date();
   db.facturation.pharmacie.push({id:'FP-'+Date.now(),patId,nomPatient:nom,date:auj(),mois:d.getMonth(),annee:d.getFullYear(),medicament:medCode+(m?' — '+m.des:''),qte,montant:qte*pu,ordo:document.getElementById('dis-ordo')?.value||'',dispensePar:SESSION.label});
-  await sf('pharmacie',db.pharmacie);sf('facturation',db.facturation);
+  await sf('pharmacie',db.pharmacie);await sf('facturation',db.facturation);
   await logAudit('Dispensation',nom+' — '+medCode+' x'+qte);
   alert('Dispensation enregistrée. Stock mis à jour.');aller('dispensation');
 }
@@ -1307,7 +1389,7 @@ async function sauverCommande(){
   const mont=parseFloat(document.getElementById('cmd-mont')?.value)||0;
   if(!articles){alert('Articles obligatoires');return;}
   const cmd={id:'CMD-'+Date.now(),date:auj(),mois:new Date().getMonth(),annee:new Date().getFullYear(),cat:document.getElementById('cmd-cat')?.value||'Médicaments',fourn:document.getElementById('cmd-fourn')?.value||'',articles,mont,urgence:document.getElementById('cmd-urgence')?.value||'Normale',motif:document.getElementById('cmd-motif')?.value||'',statut:'En attente',soumispar:SESSION.label};
-  db.commandes_phar.push(cmd);sf('commandes_phar',db.commandes_phar);
+  db.commandes_phar.push(cmd);await sf('commandes_phar',db.commandes_phar);
   await logAudit('Commande pharmacie','Soumise — '+cmd.cat+' — '+fmt(mont));
   // Simuler envoi (message alerte)
   alert(`Commande soumise avec succès !\n\nRéf : ${cmd.id}\nDate : ${cmd.date}\nMontant estimé : ${fmt(mont)}\n\nNotification envoyée à la Comptabilité et au Directeur.\nUne copie est conservée dans la base.`);
@@ -1344,12 +1426,12 @@ async function recouvrement(){
 }
 async function approuverCmd(id){
   const db=await getDB();const c=db.commandes_phar.find(x=>x.id===id);
-  if(c){c.statut='Approuvée';c.approuvePar=SESSION.label;c.dateApprob=auj();sf('commandes_phar',db.commandes_phar);await logAudit('Commande approuvée',c.id);aller('recouvrement');}
+  if(c){c.statut='Approuvée';c.approuvePar=SESSION.label;c.dateApprob=auj();await sf('commandes_phar',db.commandes_phar);await logAudit('Commande approuvée',c.id);aller('recouvrement');}
 }
 async function rejeterCmd(id){
   const raison=prompt('Raison du rejet :');
   const db=await getDB();const c=db.commandes_phar.find(x=>x.id===id);
-  if(c){c.statut='Rejetée';c.raisonRejet=raison||'—';sf('commandes_phar',db.commandes_phar);await logAudit('Commande rejetée',c.id);aller('recouvrement');}
+  if(c){c.statut='Rejetée';c.raisonRejet=raison||'—';await sf('commandes_phar',db.commandes_phar);await logAudit('Commande rejetée',c.id);aller('recouvrement');}
 }
 async function fact_consultation(){
   const db=await getDB();
@@ -1392,7 +1474,7 @@ async function fact_pharmacie(){
 }
 async function payerFacture(type,id){
   const db=await getDB();const f=db.facturation[type].find(x=>x.id===id);
-  if(f){f.statut='Payée';sf('facturation',db.facturation);aller('fact_'+type==='consultations'?'consultation':type==='examens'?'examens':'pharmacie');}
+  if(f){f.statut='Payée';await sf('facturation',db.facturation);aller('fact_'+type==='consultations'?'consultation':type==='examens'?'examens':'pharmacie');}
 }
 
 // ═══ SUBVENTIONS ══════════════════════════════════════════════
@@ -1623,18 +1705,18 @@ async function rapport(){
 
 // ═══ AUDIT ════════════════════════════════════════════════════
 async function audit(){
-  aff('<div class="page on"><div class="ptitle">Journal d'audit</div><div class="card"><p class="muted" style="padding:14px">Chargement...</p></div></div>');
+  aff('<div class="page on"><div class="ptitle">Journal audit</div><div class="card"><p class="muted" style="padding:14px">Chargement...</p></div></div>');
   const res=await api('GET','/audit');
   const log=res.ok?res.data:[];
-  const rows=log.length?log.map(l=>'<div style="display:flex;align-items:center;gap:7px;padding:7px 0;border-bottom:1px solid var(--BL);font-size:11px;flex-wrap:wrap"><span class="badge '+(l.action.includes('Connexion')?'bg2':l.action.includes('Déco')?'br2':'bb')+'">'+l.action+'</span><span style="flex:1">'+l.detail+'</span><span class="muted">'+l.user+'</span><span class="muted" style="font-size:10px;margin-left:6px">'+l.ts+'</span></div>').join(''):'<p class="muted" style="padding:14px">Aucune action.</p>';
-  aff('<div class="page on"><div class="ptitle">Journal d'audit</div><div class="card">'+rows+'</div></div>');
+  const rows=log.length?log.map(function(l){return '<div style="display:flex;align-items:center;gap:7px;padding:7px 0;border-bottom:1px solid var(--BL);font-size:11px"><span class="badge '+(l.action.includes('Connexion')?'bg2':l.action.includes('Deco')?'br2':'bb')+'">'+l.action+'</span><span style="flex:1">'+l.detail+'</span><span class="muted">'+l.user+'</span><span class="muted" style="font-size:10px;margin-left:6px">'+l.ts+'</span></div>';}).join(''):'<p class="muted" style="padding:14px">Aucune action.</p>';
+  aff('<div class="page on"><div class="ptitle">Journal audit</div><div class="card">'+rows+'</div></div>');
 }
 
 // ═══ CODES D'ACCÈS ════════════════════════════════════════════
 async function codes(){
   if(SESSION.role!=='directeur'&&SESSION.role!=='concepteur'){aff('<div class="page on"><div class="warn-bar">Accès refusé.</div></div>');return;}
-  const res=await api('GET','/codes');
-  let savedCodes=res.ok?res.data:{};
+  let savedCodes={};
+  try{const c=localStorage.getItem('csb2_codes');if(c)savedCodes=JSON.parse(c);}catch(e){}
   // Le directeur ne voit PAS le code concepteur
   const users=[
     {id:'directeur',l:'Directeur',def:'DIR2026'},
@@ -1668,7 +1750,7 @@ async function codes(){
   ${extras.length?`<div class="ctitle" style="margin-top:14px">Comptes supplémentaires</div><div class="tw"><table><thead><tr><th>Identifiant</th><th>Nom</th><th>Rôle</th></tr></thead><tbody>${extras.map(e=>`<tr><td><code>${e.id}</code></td><td>${e.label}</td><td>${e.role}</td></tr>`).join('')}</tbody></table></div>`:''}
   </div></div>`);
 }
-function changerCode(userId){
+async function changerCode(userId){
   const newPwd=document.getElementById('new-'+userId)?.value?.trim();
   if(!newPwd){alert('Entrez un nouveau mot de passe');return;}
   if(newPwd.length<4){alert('Minimum 4 caractères');return;}
@@ -1684,34 +1766,35 @@ async function ajouterLaborantin(){
   const nom=document.getElementById('ex-nom')?.value?.trim();
   const mdp=document.getElementById('ex-mdp')?.value?.trim();
   if(!id||!nom||!mdp){alert('Tous les champs sont obligatoires');return;}
-  const res=await api('POST','/extra_comptes',{id,label:nom,mdp});
-  if(!res.ok){alert('Erreur: '+(res.message||'inconnue'));return;}
+  if(COMPTES[id]){alert('Cet identifiant existe déjà');return;}
+  let extras=[];try{const e=localStorage.getItem('csb2_extra_comptes');if(e)extras=JSON.parse(e);}catch(e){}
+  const nouveau={id,label:nom,mdp,role:'labo',couleur:'#d97706',bg:'#fef3c7'};
+  extras.push(nouveau);
+  COMPTES[id]=nouveau;
+  // Ajouter dans le select du login
   const sel=document.getElementById('lid');
-  if(sel&&!sel.querySelector('option[value="'+id+'"]')){
-    const opt=document.createElement('option');opt.value=id;opt.textContent=nom+' (Laborantin)';sel.appendChild(opt);
-  }
-  alert('Laborantin ajoute : '+nom);
-  await codes();
+  if(sel){const opt=document.createElement('option');opt.value=id;opt.textContent=nom;sel.appendChild(opt);}
+  try{localStorage.setItem('csb2_extra_comptes',JSON.stringify(extras));}catch(e){}
+  await logAudit('Laborantin ajouté',id+' — '+nom);
+  alert('Laborantin ajouté : '+nom);codes();
 }
 
 // ═══ ADMIN SYSTÈME (Concepteur — invisible pour directeur) ════
 async function activerLicence(){
   const annee=parseInt(document.getElementById('lic-annee')?.value)||new Date().getFullYear();
-  const adminCode=prompt('Code administrateur :');
-  if(!adminCode)return;
-  const res=await api('POST','/licence',{adminCode,action:'activer',anneeValidite:annee});
-  if(!res.ok){alert('Erreur: '+(res.message||'Code incorrect'));return;}
-  alert('Licence activee pour '+annee+'.');
+  saveLicenceData({active:true,anneeValidite:annee,activePar:SESSION?.label||'Admin',activeLe:auj(),raisonBlocage:''});
+  await logAudit('Licence activee','Valide 31/12/'+annee);
+  alert('Licence activee pour '+annee+'.\nBlocage automatique au 31/12/'+annee+'.');
   admin();
 }
 async function desactiverLicence(){
-  const raison=document.getElementById('lic-raison')?.value||'Desactivation manuelle';
-  if(!confirm('ATTENTION — Bloquer le systeme ?'))return;
-  const adminCode=prompt('Code administrateur :');
-  if(!adminCode)return;
-  const res=await api('POST','/licence',{adminCode,action:'desactiver',raison});
-  if(!res.ok){alert('Erreur: '+(res.message||'Code incorrect'));return;}
-  alert('Systeme bloque.');admin();
+  const raison=document.getElementById('lic-raison')?.value||'Desactivation manuelle par administrateur';
+  if(!confirm('ATTENTION — Desactiver bloquera immediatement tous les acces. Confirmer ?'))return;
+  const lic=getLicenceData();
+  saveLicenceData({...lic,active:false,raisonBlocage:raison});
+  await logAudit('Licence desactivee',raison);
+  alert('Licence desactivee. Le systeme est maintenant bloque.');
+  admin();
 }
 async function admin(){
   if(SESSION.role!=='concepteur'){aff('<div class="page on"><div class="warn-bar">Accès réservé à l\'Administrateur système.</div></div>');return;}
@@ -1723,6 +1806,22 @@ async function admin(){
 
   aff(`<div class="page on"><div class="ptitle">Administration système <span class="badge bn">Administrateur</span></div>
   <div class="info-bar">Accès Administrateur — audit complet, maintenance, récupération de codes.</div>
+  <div class="card" style="border:2px solid var(--R)">
+    <div class="ctitle">Controle licence annuelle</div>
+    <div id="lic-status-block" style="margin-bottom:10px"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px">
+      <div><label style="font-size:10px;font-weight:700;color:var(--MUTED);display:block;margin-bottom:4px">ANNEE</label>
+        <select id="lic-annee" style="width:100%;padding:6px;border:1px solid var(--BDC);border-radius:6px;font-size:12px">
+          <option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option>
+        </select></div>
+      <div><label style="font-size:10px;font-weight:700;color:var(--MUTED);display:block;margin-bottom:4px">RAISON BLOCAGE</label>
+        <input id="lic-raison" placeholder="Raison..." style="width:100%;padding:6px;border:1px solid var(--BDC);border-radius:6px;font-size:12px"></div>
+      <div style="display:flex;gap:6px;align-items:flex-end">
+        <button onclick="activerLicence()" class="btn btng" style="flex:1">Activer</button>
+        <button onclick="desactiverLicence()" class="btn btnr" style="flex:1">Bloquer</button>
+      </div>
+    </div>
+  </div>
   <div class="card" style="border:2px solid var(--R)">
     <div class="ctitle">Controle de la licence annuelle</div>
     <div id="lic-status-block" style="margin-bottom:10px"></div>
@@ -1764,6 +1863,7 @@ async function admin(){
     <button class="btn btng" onclick="exporterDB()">Exporter toutes les données (JSON)</button>
     <button class="btn btnr" onclick="if(confirm('ATTENTION — Tout effacer ? Irréversible !'))reinitDB()">Réinitialiser la base</button>
   </div></div></div>`);
+  setTimeout(afficherLicenceStatus,100);
   setTimeout(afficherLicenceStatus, 10);
 }
 async function changerCodeConcepteur(){
@@ -1775,13 +1875,8 @@ async function changerCodeConcepteur(){
   await logAudit('Code concepteur modifié','Administrateur système');
   alert('Code Administrateur mis à jour.');admin();
 }
-async function exporterDB(){
-  window.open('/api/backup','_blank');
-  await logAudit('Export données','Backup téléchargé');
-}
-function reinitDB(){
-  alert('Réinitialisation non disponible en mode serveur. Contactez l'administrateur.');
-}
+function exporterDB(){window.open('/api/backup','_blank');}
+function reinitDB(){alert('Contactez l\'administrateur.');}
 </script>
 </body>
 </html>
